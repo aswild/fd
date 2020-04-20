@@ -306,7 +306,7 @@ fn run() -> Result<ExitCode> {
             .and_then(|n| u64::from_str_radix(n, 10).ok())
             .map(time::Duration::from_millis),
         ls_colors,
-        color_basename: matches.is_present("color-basename"),
+        color_leading_dirs: matches.is_present("color-leading-dirs"),
         interactive_terminal,
         file_types: matches.values_of("file-type").map(|values| {
             let mut file_types = FileTypes::default();

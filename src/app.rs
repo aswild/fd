@@ -354,13 +354,13 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("color-basename")
-            .long("color-basename")
+            Arg::with_name("color-leading-dirs")
+            .long("color-leading-dirs")
             .short("C")
-            .help("Don't highlight intermediate directory names")
+            .help("Color the leading directories when printing matches, rather than just the basename.")
             .long_help(
-                "When colored output is enabled, highlight only the basename of the match, \
-                    not leading directories. Has no effect if color is disabled, see --color."
+                "When colored output is enabled, colorize intermediate directories. By default, only
+                    the final path component is colorized according to its type and LS_COLORS."
             ),
         )
         .arg(
