@@ -2,7 +2,7 @@ use clap::{crate_version, App, AppSettings, Arg};
 
 pub fn build_app() -> App<'static, 'static> {
     let mut app = App::new("fd")
-        .version(crate_version!())
+        .version(option_env!("FD_GIT_VERSION").unwrap_or(crate_version!()))
         .usage("fd [FLAGS/OPTIONS] [<pattern>] [<path>...]")
         .setting(AppSettings::ColoredHelp)
         .setting(AppSettings::DeriveDisplayOrder)
