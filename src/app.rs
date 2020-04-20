@@ -354,6 +354,16 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
+            Arg::with_name("color-basename")
+            .long("color-basename")
+            .short("C")
+            .help("Don't highlight intermediate directory names")
+            .long_help(
+                "When colored output is enabled, highlight only the basename of the match, \
+                    not leading directories. Has no effect if color is disabled, see --color."
+            ),
+        )
+        .arg(
             Arg::with_name("threads")
                 .long("threads")
                 .short("j")

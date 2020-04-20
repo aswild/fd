@@ -50,17 +50,27 @@ fn print_entry_colorized(
 ) -> io::Result<()> {
     let default_style = ansi_term::Style::default();
 
-    // Traverse the path and colorize each component
-    for (component, style) in ls_colors.style_for_path_components(path) {
-        let style = style
-            .map(Style::to_ansi_term_style)
-            .unwrap_or(default_style);
-
+    // Traverse the path and colorize each component. Use a peekable iterator so we can
+    // see when we're formatting the last component.
+    let mut components_iter = ls_colors.style_for_path_components(path).peekable();
+    while let Some((component, style)) = components_iter.next() {
         let mut path_string = component.to_string_lossy();
         if let Some(ref separator) = config.path_separator {
             *path_string.to_mut() = replace_path_separator(&path_string, &separator);
         }
-        write!(stdout, "{}", style.paint(path_string))?;
+
+        match (config.color_basename, components_iter.peek()) {
+            // if color_basename is enabled and we aren't on the last path component,
+            // don't colorize it.
+            (true, Some(_)) => write!(stdout, "{}", path_string)?,
+            // otherwise, always color it
+            _ => {
+                let style = style
+                    .map(Style::to_ansi_term_style)
+                    .unwrap_or(default_style);
+                write!(stdout, "{}", style.paint(path_string))?;
+            }
+        }
 
         // TODO: can we move this out of the if-statement? Why do we call it that often?
         if wants_to_quit.load(Ordering::Relaxed) {
