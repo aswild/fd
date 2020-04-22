@@ -59,14 +59,17 @@ fn print_entry_colorized(
             *path_string.to_mut() = replace_path_separator(&path_string, &separator);
         }
 
-        if !config.color_leading_dirs && components_iter.peek().is_some() {
-            // if we're not going to color leading dirs and this isn't the last path
-            // component, just print it without color
-            write!(stdout, "{}", path_string)?;
-        } else {
-            // otherwise, colorize the path component
-            let style = style.map(Style::to_ansi_term_style).unwrap_or(default_style);
-            write!(stdout, "{}", style.paint(path_string))?;
+        match (config.color_basename, components_iter.peek()) {
+            // if color_basename is enabled and we aren't on the last path component,
+            // don't colorize it.
+            (true, Some(_)) => write!(stdout, "{}", path_string)?,
+            // otherwise, always color it
+            _ => {
+                let style = style
+                    .map(Style::to_ansi_term_style)
+                    .unwrap_or(default_style);
+                write!(stdout, "{}", style.paint(path_string))?;
+            }
         }
 
         // TODO: can we move this out of the if-statement? Why do we call it that often?

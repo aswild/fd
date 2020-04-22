@@ -55,8 +55,8 @@ pub struct Options {
     /// how to style different filetypes.
     pub ls_colors: Option<LsColors>,
 
-    /// Whether to colorize leading/intermediate directories in matches, or only the basename.
-    pub color_leading_dirs: bool,
+    /// Whether to colorize only the basename of the match, not leading directories.
+    pub color_basename: bool,
 
     /// Whether or not we are writing to an interactive terminal
     pub interactive_terminal: bool,
