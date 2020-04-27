@@ -8,8 +8,8 @@ prefix  ?= /usr/local
 bindir  ?= $(prefix)/bin
 mandir  ?= $(prefix)/man
 datadir ?= $(prefix)/share
-bashcompdir ?= $(datadir)/bash-completions/completions
-fishcompdir ?= $(datadir)/fish/vendor_completions.d/fd.fish
+bashcompdir ?= $(datadir)/bash-completion/completions
+fishcompdir ?= $(datadir)/fish/vendor_completions.d
 zshcompdir  ?= $(datadir)/zsh/site-functions
 
 # tools
@@ -53,7 +53,7 @@ clean:
 	$(CARGO) clean
 
 .PHONY: install
-install: $(TARGET)
+install:
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(INSTALL_STRIP) -m755 $(TARGET) $(DESTDIR)$(bindir)/
 	$(INSTALL) -Dm644 target/$(BUILD_TYPE)/build/fd-find-*/out/fd.bash $(DESTDIR)$(bashcompdir)/fd
