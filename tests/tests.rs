@@ -9,9 +9,9 @@ use regex::escape;
 
 use crate::testenv::TestEnv;
 
-static DEFAULT_DIRS: &'static [&'static str] = &["one/two/three", "one/two/three/directory_foo"];
+static DEFAULT_DIRS: &[&str] = &["one/two/three", "one/two/three/directory_foo"];
 
-static DEFAULT_FILES: &'static [&'static str] = &[
+static DEFAULT_FILES: &[&str] = &[
     "a.foo",
     "one/b.foo",
     "one/two/c.foo",
@@ -52,7 +52,7 @@ fn create_file_with_size<P: AsRef<Path>>(path: P, size_in_bytes: usize) {
     f.write_all(content.as_bytes()).unwrap();
 }
 
-/// Simple tests
+/// Simple test
 #[test]
 fn test_simple() {
     let te = TestEnv::new(DEFAULT_DIRS, DEFAULT_FILES);
@@ -70,21 +70,27 @@ fn test_simple() {
         one/two/three/d.foo
         one/two/three/directory_foo",
     );
+}
 
-    te.assert_output(
-        &[],
-        "a.foo
-        e1 e2
-        one
-        one/b.foo
-        one/two
-        one/two/c.foo
-        one/two/C.Foo2
-        one/two/three
-        one/two/three/d.foo
-        one/two/three/directory_foo
-        symlink",
-    );
+/// Test each pattern type with an empty pattern.
+#[test]
+fn test_empty_pattern() {
+    let te = TestEnv::new(DEFAULT_DIRS, DEFAULT_FILES);
+    let expected = "a.foo
+    e1 e2
+    one
+    one/b.foo
+    one/two
+    one/two/c.foo
+    one/two/C.Foo2
+    one/two/three
+    one/two/three/d.foo
+    one/two/three/directory_foo
+    symlink";
+
+    te.assert_output(&["--regex"], expected);
+    te.assert_output(&["--fixed-strings"], expected);
+    te.assert_output(&["--glob"], expected);
 }
 
 /// Test multiple directory searches
