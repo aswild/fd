@@ -71,7 +71,7 @@ install:
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(INSTALL_STRIP) -m755 $(EXE) $(DESTDIR)$(bindir)/
 	$(INSTALL) -Dm644 $(TARGET_DIR)/$(BUILD_TYPE)/build/fd-find-*/out/fd.bash $(DESTDIR)$(bashcompdir)/fd
-	$(INSTALL) -Dm644 $(TARGET_DIR)/$(BUILD_TYPE)/build/fd-find-*/out/fd.fish $(DESTDIR)$(fishcompdir)/fd.fish
+	@#$(INSTALL) -Dm644 $(TARGET_DIR)/$(BUILD_TYPE)/build/fd-find-*/out/fd.fish $(DESTDIR)$(fishcompdir)/fd.fish
 	$(INSTALL) -Dm644 $(TARGET_DIR)/$(BUILD_TYPE)/build/fd-find-*/out/_fd $(DESTDIR)$(zshcompdir)/_fd
 	$(INSTALL) -Dm644 doc/fd.1 $(DESTDIR)$(mandir)/man1/fd.1
 
