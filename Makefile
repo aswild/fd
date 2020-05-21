@@ -16,7 +16,7 @@ zshcompdir  ?= $(datadir)/zsh/site-functions
 CARGO   ?= cargo
 INSTALL ?= install
 ifeq ($(NOSTRIP),)
-INSTALL_STRIP ?= $(INSTALL) -s
+INSTALL_STRIP ?= $(INSTALL) -s --strip-program=$(STRIP)
 else
 INSTALL_STRIP ?= $(INSTALL)
 endif
@@ -38,14 +38,28 @@ ifeq ($(BUILD_TYPE),release)
 CARGO_BUILD_FLAGS += --release --locked
 endif
 
-TARGET := target/$(BUILD_TYPE)/fd
+ifneq ($(TARGET),)
+TARGET_DIR = target/$(TARGET)
+CARGO_BUILD_FLAGS += --target $(TARGET)
+else
+TARGET_DIR = target
+TARGET := $(shell ci/default_target.bash)
+endif
+
+ifeq ($(findstring windows,$(TARGET)),windows)
+EXEEXT := .exe
+else
+EXEEXT :=
+endif
+
+EXE := $(TARGET_DIR)/$(BUILD_TYPE)/fd$(EXEEXT)
 
 # easy hack to avoid re-running cargo when not needed
 SOURCES = $(shell find src -type f) build.rs Cargo.toml
 
 .PHONY: build
-build: $(TARGET)
-$(TARGET): $(SOURCES)
+build: $(EXE)
+$(EXE): $(SOURCES)
 	$(CARGO) build $(CARGO_BUILD_FLAGS)
 
 .PHONY: clean
@@ -55,15 +69,15 @@ clean:
 .PHONY: install
 install:
 	$(INSTALL) -d $(DESTDIR)$(bindir)
-	$(INSTALL_STRIP) -m755 $(TARGET) $(DESTDIR)$(bindir)/
-	$(INSTALL) -Dm644 target/$(BUILD_TYPE)/build/fd-find-*/out/fd.bash $(DESTDIR)$(bashcompdir)/fd
-	$(INSTALL) -Dm644 target/$(BUILD_TYPE)/build/fd-find-*/out/fd.fish $(DESTDIR)$(fishcompdir)/fd.fish
-	$(INSTALL) -Dm644 target/$(BUILD_TYPE)/build/fd-find-*/out/_fd $(DESTDIR)$(zshcompdir)/_fd
+	$(INSTALL_STRIP) -m755 $(EXE) $(DESTDIR)$(bindir)/
+	$(INSTALL) -Dm644 $(TARGET_DIR)/$(BUILD_TYPE)/build/fd-find-*/out/fd.bash $(DESTDIR)$(bashcompdir)/fd
+	$(INSTALL) -Dm644 $(TARGET_DIR)/$(BUILD_TYPE)/build/fd-find-*/out/fd.fish $(DESTDIR)$(fishcompdir)/fd.fish
+	$(INSTALL) -Dm644 $(TARGET_DIR)/$(BUILD_TYPE)/build/fd-find-*/out/_fd $(DESTDIR)$(zshcompdir)/_fd
 	$(INSTALL) -Dm644 doc/fd.1 $(DESTDIR)$(mandir)/man1/fd.1
 
 .PHONY: dist
-dist: fd_version = $(shell $(TARGET) -V | sed 's/^fd //')
-dist: $(TARGET)
-	$(INSTALL) -d target/dist/$(fd_version)
-	$(MAKE) --no-print-directory prefix= DESTDIR=$(PWD)/target/dist/$(fd_version) install
-	$(TAR) -cvzf fd-$(fd_version).tar.gz -C target/dist $(fd_version)
+dist: fd_dist_name = fd-$(shell sed -n 's/.*FD_GIT_VERSION=\(.*\)/\1/p' $(TARGET_DIR)/$(BUILD_TYPE)/build/fd-find-*/output)-$(TARGET)
+dist: $(EXE)
+	$(INSTALL) -d $(TARGET_DIR)/dist/$(fd_dist_name)
+	$(MAKE) --no-print-directory prefix= DESTDIR=$(PWD)/$(TARGET_DIR)/dist/$(fd_dist_name) install
+	$(TAR) -cvzf $(fd_dist_name).tar.gz -C $(TARGET_DIR)/dist $(fd_dist_name)
