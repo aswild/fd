@@ -117,6 +117,45 @@ fn test_multi_file() {
     te.assert_output(&["b.foo", "test1", "test2"], "test1/b.foo");
 }
 
+/// Test search over multiple directory with missing
+#[test]
+fn test_multi_file_with_missing() {
+    let dirs = &["real"];
+    let files = &["real/a.foo", "real/b.foo"];
+    let te = TestEnv::new(dirs, files);
+    te.assert_output(&["a.foo", "real", "fake"], "real/a.foo");
+
+    te.assert_error(
+        &["a.foo", "real", "fake"],
+        "[fd error]: Search path 'fake' is not a directory.",
+    );
+
+    te.assert_output(
+        &["", "real", "fake"],
+        "real/a.foo
+        real/b.foo",
+    );
+
+    te.assert_output(
+        &["", "real", "fake1", "fake2"],
+        "real/a.foo
+        real/b.foo",
+    );
+
+    te.assert_error(
+        &["", "real", "fake1", "fake2"],
+        "[fd error]: Search path 'fake1' is not a directory.
+        [fd error]: Search path 'fake2' is not a directory.",
+    );
+
+    te.assert_failure_with_error(
+        &["", "fake1", "fake2"],
+        "[fd error]: Search path 'fake1' is not a directory.
+        [fd error]: Search path 'fake2' is not a directory.
+        [fd error]: No valid search paths given.",
+    );
+}
+
 /// Explicit root path
 #[test]
 fn test_explicit_root_path() {
@@ -1214,22 +1253,22 @@ fn test_exec_batch() {
             "",
         );
 
-        te.assert_error(
+        te.assert_failure_with_error(
             &["foo", "--exec-batch", "echo", "{}", "{}"],
             "[fd error]: Only one placeholder allowed for batch commands",
         );
 
-        te.assert_error(
+        te.assert_failure_with_error(
             &["foo", "--exec-batch", "echo", "{/}", ";", "-x", "echo"],
             "error: The argument '--exec <cmd>' cannot be used with '--exec-batch <cmd>'",
         );
 
-        te.assert_error(
+        te.assert_failure_with_error(
             &["foo", "--exec-batch"],
             "error: The argument '--exec-batch <cmd>' requires a value but none was supplied",
         );
 
-        te.assert_error(
+        te.assert_failure_with_error(
             &["foo", "--exec-batch", "echo {}"],
             "[fd error]: First argument of exec-batch is expected to be a fixed executable",
         );

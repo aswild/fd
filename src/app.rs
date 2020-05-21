@@ -30,7 +30,7 @@ pub fn build_app() -> App<'static, 'static> {
                 .help("Do not respect .(git|fd)ignore files")
                 .long_help(
                     "Show search results from files and directories that would otherwise be \
-                         ignored by '.gitignore', '.ignore' or '.fdignore' files.",
+                         ignored by '.gitignore', '.ignore', '.fdignore', or the global ignore file.",
                 ),
         )
         .arg(
@@ -42,6 +42,12 @@ pub fn build_app() -> App<'static, 'static> {
                     "Show search results from files and directories that would otherwise be \
                          ignored by '.gitignore' files.",
                 ),
+        )
+        .arg(
+            Arg::with_name("no-global-ignore-file")
+                .long("no-global-ignore-file")
+                .hidden(true)
+                .long_help("Do not respect the global ignore file."),
         )
         .arg(
             Arg::with_name("rg-alias-hidden-ignore")
@@ -390,15 +396,15 @@ pub fn build_app() -> App<'static, 'static> {
                         '-': file size must be less than or equal to this\n   \
                         'NUM':  The numeric size (e.g. 500)\n   \
                         'UNIT': The units for NUM. They are not case-sensitive.\n\
-                     Allowed unit values:\n   \
-                         'b':  bytes\n   \
-                         'k':  kilobytes\n   \
-                         'm':  megabytes\n   \
-                         'g':  gigabytes\n   \
-                         't':  terabytes\n   \
-                         'ki': kibibytes\n   \
-                         'mi': mebibytes\n   \
-                         'gi': gibibytes\n   \
+                     Allowed unit values:\n    \
+                         'b':  bytes\n    \
+                         'k':  kilobytes (base ten, 10^3 = 1000 bytes)\n    \
+                         'm':  megabytes\n    \
+                         'g':  gigabytes\n    \
+                         't':  terabytes\n    \
+                         'ki': kibibytes (base two, 2^10 = 1024 bytes)\n    \
+                         'mi': mebibytes\n    \
+                         'gi': gibibytes\n    \
                          'ti': tebibytes",
                 ),
         )
@@ -533,6 +539,26 @@ pub fn build_app() -> App<'static, 'static> {
                          --search-path <path2> [<pattern>]`",
                 ),
         );
+
+    if cfg!(unix) {
+        app = app.arg(
+            Arg::with_name("owner")
+                .long("owner")
+                .short("o")
+                .takes_value(true)
+                .value_name("user:group")
+                .help("Filter by owning user and/or group")
+                .long_help(
+                    "Filter files by their user and/or group. \
+                     Format: [(user|uid)][:(group|gid)]. Either side is optional. \
+                     Precede either side with a '!' to exclude files instead.\n\
+                     Examples:\n    \
+                         --owner john\n    \
+                         --owner :students\n    \
+                         --owner '!john:students'",
+                ),
+        );
+    }
 
     // Make `--one-file-system` available only on Unix and Windows platforms, as per the
     // restrictions on the corresponding option in the `ignore` crate.

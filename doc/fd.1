@@ -33,10 +33,9 @@ Include hidden files and directories in the search results
 .B \-I, \-\-no\-ignore
 Show search results from files and directories that would otherwise be ignored by
 .IR .gitignore ,
-.I .ignore
-or
-.I .fdignore
-files.
+.IR .ignore ,
+.IR .fdignore ,
+or the global ignore file.
 .TP
 .B \-u, \-\-unrestricted
 Alias for '--no-ignore'. Can be repeated; '-uu' is an alias for '--no-ignore --hidden'.
@@ -190,7 +189,7 @@ Allowed unit values:
 .IP 'b'
 bytes
 .IP 'k'
-kilobytes
+kilobytes (base ten, 10^3 = 1000 bytes)
 .IP 'm'
 megabytes
 .IP 'g'
@@ -198,7 +197,7 @@ gigabytes
 .IP 't'
 terabytes
 .IP 'ki'
-kibibytes
+kibibytes (base two, 2^10 = 1024 bytes)
 .IP 'mi'
 mebibytes
 .IP 'gi'
@@ -227,6 +226,15 @@ can be used as an alias.
 Examples:
   \-\-changed-before "2018-10-27 10:00:00"
   \-\-change-older-than 2weeks
+.TP
+.BI "-o, \-\-owner " [user][:group]
+Filter files by their user and/or group. Format: [(user|uid)][:(group|gid)]. Either side
+is optional. Precede either side with a '!' to exclude files instead.
+
+Examples:
+  \-\-owner john
+  \-\-owner :students
+  \-\-owner "!john:students"
 .TP
 .BI "\-x, \-\-exec " command
 Execute
@@ -277,6 +285,14 @@ The glob syntax is documented here:
 .B LS_COLORS
 Determines how to colorize search results, see
 .BR dircolors (1) .
+.TP
+.B XDG_CONFIG_HOME, HOME
+Used to locate the global ignore file. If
+.B XDG_CONFIG_HOME
+is set, use
+.IR $XDG_CONFIG_HOME/fd/ignore .
+Otherwise, use
+.IR $HOME/.config/fd/ignore .
 .SH EXAMPLES
 .TP
 .RI "Find files and directories that match the pattern '" needle "':"

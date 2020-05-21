@@ -22,15 +22,19 @@ use globset::GlobBuilder;
 use lscolors::LsColors;
 use regex::bytes::{RegexBuilder, RegexSetBuilder};
 
+use crate::error::print_error;
 use crate::exec::CommandTemplate;
 use crate::exit_codes::ExitCode;
 use crate::filetypes::FileTypes;
+#[cfg(unix)]
+use crate::filter::OwnerFilter;
 use crate::filter::{SizeFilter, TimeFilter};
 use crate::options::Options;
 use crate::regex_helper::pattern_has_uppercase_char;
 
 // We use jemalloc for performance reasons, see https://github.com/sharkdp/fd/pull/481
-#[cfg(all(not(windows), not(target_env = "musl")))]
+// FIXME: re-enable jemalloc on macOS, see comment in Cargo.toml file for more infos
+#[cfg(all(not(windows), not(target_os = "macos"), not(target_env = "musl")))]
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
@@ -72,28 +76,36 @@ fn run() -> Result<ExitCode> {
         .unwrap_or("");
 
     // Get one or more root directories to search.
-    let mut dir_vec: Vec<_> = match matches
+    let passed_arguments = matches
         .values_of_os("path")
-        .or_else(|| matches.values_of_os("search-path"))
-    {
-        Some(paths) => paths
-            .map(|path| {
-                let path_buffer = PathBuf::from(path);
-                if filesystem::is_dir(&path_buffer) {
-                    Ok(path_buffer)
-                } else {
-                    Err(anyhow!(
-                        "Search path '{}' is not a directory.",
-                        path_buffer.to_string_lossy()
-                    ))
-                }
-            })
-            .collect::<Result<Vec<_>>>()?,
-        None => vec![current_directory.to_path_buf()],
+        .or_else(|| matches.values_of_os("search-path"));
+
+    let mut search_paths = if let Some(paths) = passed_arguments {
+        let mut directories = vec![];
+        for path in paths {
+            let path_buffer = PathBuf::from(path);
+            if filesystem::is_dir(&path_buffer) {
+                directories.push(path_buffer);
+            } else {
+                print_error(format!(
+                    "Search path '{}' is not a directory.",
+                    path_buffer.to_string_lossy()
+                ));
+            }
+        }
+
+        directories
+    } else {
+        vec![current_directory.to_path_buf()]
     };
 
+    // Check if we have no valid search paths.
+    if search_paths.is_empty() {
+        return Err(anyhow!("No valid search paths given."));
+    }
+
     if matches.is_present("absolute-path") {
-        dir_vec = dir_vec
+        search_paths = search_paths
             .iter()
             .map(|path_buffer| {
                 path_buffer
@@ -146,7 +158,7 @@ fn run() -> Result<ExitCode> {
     let path_separator = matches.value_of("path-separator").map(|str| str.to_owned());
 
     #[cfg(windows)]
-    ansi_term::enable_ansi_support().ok();
+    let colored_output = colored_output && ansi_term::enable_ansi_support().is_ok();
 
     let ls_colors = if colored_output {
         Some(LsColors::from_env().unwrap_or_default())
@@ -275,6 +287,13 @@ fn run() -> Result<ExitCode> {
         }
     }
 
+    #[cfg(unix)]
+    let owner_constraint = if let Some(s) = matches.value_of("owner") {
+        OwnerFilter::from_string(s)?
+    } else {
+        None
+    };
+
     let config = Options {
         case_sensitive,
         search_full_path: matches.is_present("full-path"),
@@ -285,6 +304,9 @@ fn run() -> Result<ExitCode> {
         read_vcsignore: !(matches.is_present("no-ignore")
             || matches.is_present("rg-alias-hidden-ignore")
             || matches.is_present("no-ignore-vcs")),
+        read_global_ignore: !(matches.is_present("no-ignore")
+            || matches.is_present("rg-alias-hidden-ignore")
+            || matches.is_present("no-global-ignore-file")),
         follow_links: matches.is_present("follow"),
         one_file_system: matches.is_present("one-file-system"),
         null_separator: matches.is_present("null_separator"),
@@ -359,6 +381,8 @@ fn run() -> Result<ExitCode> {
             .unwrap_or_else(|| vec![]),
         size_constraints: size_limits,
         time_constraints,
+        #[cfg(unix)]
+        owner_constraint,
         show_filesystem_errors: matches.is_present("show-errors"),
         path_separator,
         max_results: matches
@@ -387,7 +411,7 @@ fn run() -> Result<ExitCode> {
             )
         })?;
 
-    walk::scan(&dir_vec, Arc::new(re), Arc::new(config))
+    walk::scan(&search_paths, Arc::new(re), Arc::new(config))
 }
 
 fn main() {

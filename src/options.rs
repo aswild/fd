@@ -5,6 +5,8 @@ use regex::bytes::RegexSet;
 
 use crate::exec::CommandTemplate;
 use crate::filetypes::FileTypes;
+#[cfg(unix)]
+use crate::filter::OwnerFilter;
 use crate::filter::{SizeFilter, TimeFilter};
 
 /// Configuration options for *fd*.
@@ -24,6 +26,9 @@ pub struct Options {
 
     /// Whether to respect VCS ignore files (`.gitignore`, ..) or not.
     pub read_vcsignore: bool,
+
+    /// Whether to respect the global ignore file or not.
+    pub read_global_ignore: bool,
 
     /// Whether to follow symlinks or not.
     pub follow_links: bool,
@@ -84,6 +89,10 @@ pub struct Options {
 
     /// Constraints on last modification time of files
     pub time_constraints: Vec<TimeFilter>,
+
+    #[cfg(unix)]
+    /// User/group ownership constraint
+    pub owner_constraint: Option<OwnerFilter>,
 
     /// Whether or not to display filesystem errors
     pub show_filesystem_errors: bool,
