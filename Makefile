@@ -6,8 +6,8 @@
 # install paths
 prefix  ?= /usr/local
 bindir  ?= $(prefix)/bin
-mandir  ?= $(prefix)/man
 datadir ?= $(prefix)/share
+mandir  ?= $(datadir)/man
 bashcompdir ?= $(datadir)/bash-completion/completions
 fishcompdir ?= $(datadir)/fish/vendor_completions.d
 zshcompdir  ?= $(datadir)/zsh/site-functions
