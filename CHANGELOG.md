@@ -5,6 +5,12 @@
 ## Changes
 ## Other
 
+# v8.1.1
+
+## Bugfixes
+
+- Support colored output on older Windows versions if either (1) `--color=always` is set or (2) the `TERM` environment variable is set. See #469
+
 # v8.1.0
 
 ## Features
