@@ -15,6 +15,7 @@ zshcompdir  ?= $(datadir)/zsh/site-functions
 # tools
 CARGO   ?= cargo
 INSTALL ?= install
+STRIP   ?= strip
 ifeq ($(NOSTRIP),)
 INSTALL_STRIP ?= $(INSTALL) -s --strip-program=$(STRIP)
 else
@@ -80,4 +81,4 @@ dist: fd_dist_name = fd-$(shell sed -n 's/.*FD_GIT_VERSION=\(.*\)/\1/p' $(TARGET
 dist: $(EXE)
 	$(INSTALL) -d $(TARGET_DIR)/dist/$(fd_dist_name)
 	$(MAKE) --no-print-directory prefix= DESTDIR=$(PWD)/$(TARGET_DIR)/dist/$(fd_dist_name) install
-	$(TAR) -cvzf $(fd_dist_name).tar.gz -C $(TARGET_DIR)/dist $(fd_dist_name)
+	$(TAR) -cvzf $(fd_dist_name).tar.gz --owner=root:0 --group=root:0 -C $(TARGET_DIR)/dist $(fd_dist_name)
