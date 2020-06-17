@@ -38,6 +38,29 @@ use crate::regex_helper::pattern_has_uppercase_char;
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
+#[cfg(windows)]
+fn default_path_separator() -> Option<String> {
+    // MSYS2 will conveniently set the MSYSTEM environment variable.
+    // Unfortunately cygwin isn't as helpful. We could write a hack here to look for C:\cygwin64
+    // directories in PATH, but that could be misinterpreted. Also, cygwin users need a shell
+    // wrapper anyway to run $(cygpath -w) on path arguments (unlike mingw which does that
+    // automatically), so that wrapper might as well pass --path-separator=/ too.
+    if let Ok(msystem) = env::var("MSYSTEM") {
+        // nest this match inside if-let to more easily unwrap and call .as_str
+        match msystem.as_str() {
+            "MINGW64" | "MINGW32" | "MSYS" => Some("/".to_owned()),
+            _ => None,
+        }
+    } else {
+        None
+    }
+}
+
+#[cfg(not(windows))]
+fn default_path_separator() -> Option<String> {
+    None
+}
+
 fn run() -> Result<ExitCode> {
     let matches = app::build_app().get_matches_from(env::args_os());
 
@@ -162,7 +185,9 @@ fn run() -> Result<ExitCode> {
         _ => ansi_colors_support && env::var_os("NO_COLOR").is_none() && interactive_terminal,
     };
 
-    let path_separator = matches.value_of("path-separator").map(|str| str.to_owned());
+    let path_separator = matches
+        .value_of("path-separator")
+        .map_or_else(default_path_separator, |str| Some(str.to_owned()));
 
     let ls_colors = if colored_output {
         Some(LsColors::from_env().unwrap_or_default())
