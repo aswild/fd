@@ -21,4 +21,5 @@ run make clean
 
 build_arch x86_64-unknown-linux-gnu strip
 build_arch aarch64-unknown-linux-gnu aarch64-linux-gnu-strip
+build_arch aarch64-unknown-linux-musl aarch64-linux-gnu-strip
 build_arch x86_64-pc-windows-gnu x86_64-w64-mingw32-strip
