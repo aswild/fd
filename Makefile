@@ -68,16 +68,18 @@ clean:
 	$(CARGO) clean
 
 .PHONY: install
+install: out_dir := $(shell  find $(TARGET_DIR)/$(BUILD_TYPE) -path '*/fd-find-*/out' -type d -exec ls -dt {} + | head -n1)
 install:
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(INSTALL_STRIP) -m755 $(EXE) $(DESTDIR)$(bindir)/
-	$(INSTALL) -Dm644 $(TARGET_DIR)/$(BUILD_TYPE)/build/fd-find-*/out/fd.bash $(DESTDIR)$(bashcompdir)/fd
-	@#$(INSTALL) -Dm644 $(TARGET_DIR)/$(BUILD_TYPE)/build/fd-find-*/out/fd.fish $(DESTDIR)$(fishcompdir)/fd.fish
-	$(INSTALL) -Dm644 $(TARGET_DIR)/$(BUILD_TYPE)/build/fd-find-*/out/_fd $(DESTDIR)$(zshcompdir)/_fd
+	$(INSTALL) -Dm644 $(out_dir)/fd.bash $(DESTDIR)$(bashcompdir)/fd
+	@#$(INSTALL) -Dm644 $(out_dir)/fd.fish $(DESTDIR)$(fishcompdir)/fd.fish
+	$(INSTALL) -Dm644 $(out_dir)/_fd $(DESTDIR)$(zshcompdir)/_fd
 	$(INSTALL) -Dm644 doc/fd.1 $(DESTDIR)$(mandir)/man1/fd.1
 
 .PHONY: dist
-dist: fd_dist_name = fd-$(shell sed -n 's/.*FD_GIT_VERSION=\(.*\)/\1/p' $(TARGET_DIR)/$(BUILD_TYPE)/build/fd-find-*/output)-$(TARGET)
+dist: output_file := $(shell  find $(TARGET_DIR)/$(BUILD_TYPE) -path '*/fd-find-*/output' -type f -exec ls -dt {} + | head -n1)
+dist: fd_dist_name := fd-$(shell sed -n 's/.*FD_GIT_VERSION=\(.*\)/\1/p' $(output_file))-$(TARGET)
 dist: $(EXE)
 	$(INSTALL) -d $(TARGET_DIR)/dist/$(fd_dist_name)
 	$(MAKE) --no-print-directory prefix= DESTDIR=$(PWD)/$(TARGET_DIR)/dist/$(fd_dist_name) install
