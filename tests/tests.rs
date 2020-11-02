@@ -758,6 +758,40 @@ fn test_exact_depth() {
     );
 }
 
+/// Pruning (--prune)
+#[test]
+fn test_prune() {
+    let dirs = &["foo/bar", "bar/foo", "baz"];
+    let files = &[
+        "foo/foo.file",
+        "foo/bar/foo.file",
+        "bar/foo.file",
+        "bar/foo/foo.file",
+        "baz/foo.file",
+    ];
+
+    let te = TestEnv::new(dirs, files);
+
+    te.assert_output(
+        &["foo"],
+        "foo
+        foo/foo.file
+        foo/bar/foo.file
+        bar/foo.file
+        bar/foo
+        bar/foo/foo.file
+        baz/foo.file",
+    );
+
+    te.assert_output(
+        &["--prune", "foo"],
+        "foo
+        bar/foo
+        bar/foo.file
+        baz/foo.file",
+    );
+}
+
 /// Absolute paths (--absolute-path)
 #[test]
 fn test_absolute_path() {
@@ -1610,4 +1644,23 @@ fn test_list_details() {
 
     // Make sure we can execute 'fd --list-details' without any errors.
     te.assert_success_and_get_output(".", &["--list-details"]);
+}
+
+/// Make sure that fd fails if numeric arguments can not be parsed
+#[test]
+fn test_number_parsing_errors() {
+    let te = TestEnv::new(&[], &[]);
+
+    te.assert_failure(&["--threads=a"]);
+    te.assert_failure(&["-j", ""]);
+    te.assert_failure(&["--threads=0"]);
+
+    te.assert_failure(&["--min-depth=a"]);
+    te.assert_failure(&["--max-depth=a"]);
+    te.assert_failure(&["--maxdepth=a"]);
+    te.assert_failure(&["--exact-depth=a"]);
+
+    te.assert_failure(&["--max-buffer-time=a"]);
+
+    te.assert_failure(&["--max-results=a"]);
 }

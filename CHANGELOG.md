@@ -1,9 +1,20 @@
 # Upcoming release
 
 ## Features
+
+- Improved the usability of the time-based options, see #624 and #645 (@gorogoroumaru)
+- Add new `--prune` flag, see #535 (@reima)
+
 ## Bugfixes
+
+- Avoid panic when performing limited searches in directories with restricted permissions, see #678
+- Invalid numeric command-line arguments are silently ignored, see #675
+- Disable jemalloc on Android, see #662
+
 ## Changes
 ## Other
+
+- Added `zsh` completion files, see #654 and #189 (@smancill)
 
 # v8.1.1
 

@@ -93,8 +93,8 @@ in [ripgrep](https://github.com/BurntSushi/ripgrep) (check it out!).
 variable [`LS_COLORS`](https://linux.die.net/man/5/dir_colors) has to be set. Typically, the value
 of this variable is set by the `dircolors` command which provides a convenient configuration format
 to define colors for different file formats.
-On most distributions, `LS_COLORS` should be set already. If you are looking for alternative, more
-complete (and more colorful) variants, see
+On most distributions, `LS_COLORS` should be set already. If you are on Windows or if you are looking
+for alternative, more complete (or more colorful) variants, see [here](https://github.com/sharkdp/vivid),
 [here](https://github.com/seebi/dircolors-solarized) or
 [here](https://github.com/trapd00r/LS_COLORS).
 
@@ -136,7 +136,7 @@ The number of threads used for command execution can be set with the `--threads`
 *... and other Debian-based Linux distributions.*
 
 If you run Ubuntu 19.04 (Disco Dingo) or newer, you can install the
-[officially maintained package](https://packages.ubuntu.com/disco/fd-find):
+[officially maintained package](https://packages.ubuntu.com/fd-find):
 ```
 sudo apt install fd-find
 ```
@@ -281,7 +281,7 @@ cargo build
 cargo test
 
 # Install
-cargo install
+cargo install --path .
 ```
 
 ## Command-line options
@@ -352,6 +352,10 @@ with `x` and end with `rc`:
 X11/xinit/xinitrc
 X11/xinit/xserverrc
 ```
+
+The regular expression syntax used by fd is documented here:
+
+[https://docs.rs/regex/1.0.0/regex/#syntax](https://docs.rs/regex/1.0.0/regex/#syntax)
 
 ### Specifying the root directory
 
@@ -575,6 +579,11 @@ default, nor does it support as rich a set of options as `fd` does to control wh
 For more information about `as-tree`, see [the `as-tree` README][`as-tree`].
 
 [`as-tree`]: https://github.com/jez/as-tree
+
+## Maintainers
+
+- [sharkdp](https://github.com/sharkdp)
+- [tmccombs](https://github.com/tmccombs)
 
 ## License
 Copyright (c) 2017-2020 The fd developers

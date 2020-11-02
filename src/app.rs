@@ -216,6 +216,13 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
+            Arg::with_name("prune")
+                .long("prune")
+                .conflicts_with_all(&["size", "exact-depth"])
+                .hidden_short_help(true)
+                .long_help("Do not traverse into matching directories.")
+        )
+        .arg(
             Arg::with_name("file-type")
                 .long("type")
                 .short("t")
@@ -422,6 +429,7 @@ pub fn build_app() -> App<'static, 'static> {
             Arg::with_name("changed-within")
                 .long("changed-within")
                 .alias("change-newer-than")
+                .alias("newer")
                 .takes_value(true)
                 .value_name("date|dur")
                 .number_of_values(1)
@@ -439,6 +447,7 @@ pub fn build_app() -> App<'static, 'static> {
             Arg::with_name("changed-before")
                 .long("changed-before")
                 .alias("change-older-than")
+                .alias("older")
                 .takes_value(true)
                 .value_name("date|dur")
                 .number_of_values(1)

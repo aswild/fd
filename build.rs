@@ -47,7 +47,6 @@ fn main() {
     let mut app = build_app();
     app.gen_completions("fd", Shell::Bash, &outdir);
     app.gen_completions("fd", Shell::Fish, &outdir);
-    app.gen_completions("fd", Shell::Zsh, &outdir);
     app.gen_completions("fd", Shell::PowerShell, &outdir);
 
     // HACK! As usual, clap is incapable of generating correct zsh completions.
