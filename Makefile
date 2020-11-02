@@ -74,12 +74,12 @@ install:
 	$(INSTALL_STRIP) -m755 $(EXE) $(DESTDIR)$(bindir)/
 	$(INSTALL) -Dm644 $(out_dir)/fd.bash $(DESTDIR)$(bashcompdir)/fd
 	@#$(INSTALL) -Dm644 $(out_dir)/fd.fish $(DESTDIR)$(fishcompdir)/fd.fish
-	$(INSTALL) -Dm644 $(out_dir)/_fd $(DESTDIR)$(zshcompdir)/_fd
+	$(INSTALL) -Dm644 contrib/completion/_fd $(DESTDIR)$(zshcompdir)/_fd
 	$(INSTALL) -Dm644 doc/fd.1 $(DESTDIR)$(mandir)/man1/fd.1
 
 .PHONY: dist
 dist: output_file := $(shell  find $(TARGET_DIR)/$(BUILD_TYPE) -path '*/fd-find-*/output' -type f -exec ls -dt {} + | head -n1)
-dist: fd_dist_name := fd-$(shell sed -n 's/.*FD_GIT_VERSION=\(.*\)/\1/p' $(output_file))-$(TARGET)
+dist: fd_dist_name := fd-$(shell sed -n 's/.*FD_GIT_VERSION=\(.*\)/\1/p' '$(output_file)')-$(TARGET)
 dist: $(EXE)
 	$(INSTALL) -d $(TARGET_DIR)/dist/$(fd_dist_name)
 	$(MAKE) --no-print-directory prefix= DESTDIR=$(PWD)/$(TARGET_DIR)/dist/$(fd_dist_name) install
