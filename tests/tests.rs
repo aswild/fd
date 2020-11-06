@@ -1014,6 +1014,12 @@ fn test_extension() {
     let te4 = TestEnv::new(&[], &[".hidden", "test.hidden"]);
 
     te4.assert_output(&["--hidden", "--extension", ".hidden"], "test.hidden");
+
+    let te5 = TestEnv::new(&[], &["with_ext.txt", "no_ext", "trailing_dot."]);
+
+    te5.assert_output(&["--type", "f", "--extension", ""], "no_ext");
+
+    //te5.assert_output(&["--extension", "."], "trailing_dot.");
 }
 
 /// Symlink as search directory

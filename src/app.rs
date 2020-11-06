@@ -273,7 +273,8 @@ pub fn build_app() -> App<'static, 'static> {
                 .help("Filter by file extension")
                 .long_help(
                     "(Additionally) filter search results by their file extension. Multiple \
-                         allowable file extensions can be specified.",
+                         allowable file extensions can be specified. If the extension argument \
+                         is empty (e.g. 'fd -e \"\"'), then search for files with no extension.",
                 ),
         )
         .arg(

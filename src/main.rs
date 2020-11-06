@@ -413,9 +413,13 @@ fn run() -> Result<ExitCode> {
         extensions: matches
             .values_of("extension")
             .map(|exts| {
-                let patterns = exts
-                    .map(|e| e.trim_start_matches('.'))
-                    .map(|e| format!(r".\.{}$", regex::escape(e)));
+                let patterns = exts.map(|e| {
+                    if e.is_empty() {
+                        r"^\.?[^.]+$".to_owned()
+                    } else {
+                        format!(r".\.{}$", regex::escape(e.trim_start_matches('.')))
+                    }
+                });
                 RegexSetBuilder::new(patterns)
                     .case_insensitive(true)
                     .build()
