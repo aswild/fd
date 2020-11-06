@@ -363,7 +363,7 @@ fn run() -> Result<ExitCode> {
                 .value_of("threads")
                 .map(|n| usize::from_str_radix(n, 10))
                 .transpose()
-                .context(format!("Failed to parse number of threads"))?
+                .context("Failed to parse number of threads")?
                 .map(|n| {
                     if n > 0 {
                         Ok(n)
@@ -429,11 +429,11 @@ fn run() -> Result<ExitCode> {
         exclude_patterns: matches
             .values_of("exclude")
             .map(|v| v.map(|p| String::from("!") + p).collect())
-            .unwrap_or_else(|| vec![]),
+            .unwrap_or_default(),
         ignore_files: matches
             .values_of("ignore-file")
             .map(|vs| vs.map(PathBuf::from).collect())
-            .unwrap_or_else(|| vec![]),
+            .unwrap_or_default(),
         size_constraints: size_limits,
         time_constraints,
         #[cfg(unix)]

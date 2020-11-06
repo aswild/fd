@@ -119,7 +119,7 @@ fn normalize_output(s: &str, trim_start: bool, normalize_line: bool) -> String {
             let line = line.replace('/', &std::path::MAIN_SEPARATOR.to_string());
             if normalize_line {
                 let mut words: Vec<_> = line.split_whitespace().collect();
-                words.sort();
+                words.sort_unstable();
                 return words.join(" ");
             }
             line
@@ -293,6 +293,6 @@ impl TestEnv {
             }
         }
 
-        return output.status;
+        output.status
     }
 }

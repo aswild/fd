@@ -195,10 +195,7 @@ enum ArgumentTemplate {
 
 impl ArgumentTemplate {
     pub fn has_tokens(&self) -> bool {
-        match self {
-            ArgumentTemplate::Tokens(_) => true,
-            _ => false,
-        }
+        matches!(self, ArgumentTemplate::Tokens(_))
     }
 
     pub fn generate(&self, path: impl AsRef<Path>) -> OsString {
