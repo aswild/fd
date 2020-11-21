@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 run() {
     echo "+ $*"
     "$@"
@@ -16,6 +18,12 @@ build_arch() {
     fi
     run make TARGET="$target" "$strip_arg" build dist
 }
+
+if [[ "${1:-}" == "--docker" ]]; then
+    run docker run --rm --user "$(id -u)":"$(id -g)" -v "$PWD":/usr/src/fd -w /usr/src/fd \
+        aswild/rust-multiarch ci/make_dist.bash
+    exit 0
+fi
 
 run make clean
 
