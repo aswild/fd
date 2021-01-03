@@ -1,10 +1,16 @@
 use clap::{crate_version, App, AppSettings, Arg};
 
 pub fn build_app() -> App<'static, 'static> {
+    let clap_color_setting = if std::env::var_os("NO_COLOR").is_none() {
+        AppSettings::ColoredHelp
+    } else {
+        AppSettings::ColorNever
+    };
+
     let mut app = App::new("fd")
         .version(option_env!("FD_GIT_VERSION").unwrap_or(crate_version!()))
         .usage("fd [FLAGS/OPTIONS] [<pattern>] [<path>...]")
-        .setting(AppSettings::ColoredHelp)
+        .setting(clap_color_setting)
         .setting(AppSettings::DeriveDisplayOrder)
         .after_help(
             "Note: `fd -h` prints a short and concise overview while `fd --help` gives all \
@@ -111,7 +117,9 @@ pub fn build_app() -> App<'static, 'static> {
                 .overrides_with("fixed-strings")
                 .hidden_short_help(true)
                 .long_help(
-                    "Treat the pattern as a literal string instead of a regular expression.",
+                    "Treat the pattern as a literal string instead of a regular expression. Note \
+                     that this also performs substring comparison. If you want to match on an \
+                     exact filename, consider using '--glob'.",
                 ),
         )
         .arg(
@@ -273,8 +281,8 @@ pub fn build_app() -> App<'static, 'static> {
                 .help("Filter by file extension")
                 .long_help(
                     "(Additionally) filter search results by their file extension. Multiple \
-                         allowable file extensions can be specified. If the extension argument \
-                         is empty (e.g. 'fd -e \"\"'), then search for files with no extension.",
+                     allowable file extensions can be specified. If the extension argument \
+                     is empty (e.g. 'fd -e \"\"'), then search for files with no extension.",
                 ),
         )
         .arg(
@@ -335,7 +343,10 @@ pub fn build_app() -> App<'static, 'static> {
                 .long_help(
                     "Exclude files/directories that match the given glob pattern. This \
                          overrides any other ignore logic. Multiple exclude patterns can be \
-                         specified.",
+                         specified.\n\n\
+                         Examples:\n  \
+                           --exclude '*.pyc'\n  \
+                           --exclude node_modules",
                 ),
         )
         .arg(
@@ -401,7 +412,8 @@ pub fn build_app() -> App<'static, 'static> {
                 .long_help(
                     "Limit results based on the size of files using the format <+-><NUM><UNIT>.\n   \
                         '+': file size must be greater than or equal to this\n   \
-                        '-': file size must be less than or equal to this\n   \
+                        '-': file size must be less than or equal to this\n\
+                     If neither '+' nor '-' is specified, file size must be exactly equal to this.\n   \
                         'NUM':  The numeric size (e.g. 500)\n   \
                         'UNIT': The units for NUM. They are not case-sensitive.\n\
                      Allowed unit values:\n    \
@@ -512,8 +524,12 @@ pub fn build_app() -> App<'static, 'static> {
         )
         .arg(
             Arg::with_name("pattern").help(
-                "the search pattern - a regular expression unless '--glob' is used (optional)",
-            ),
+                "the search pattern (a regular expression, unless '--glob' is used; optional)",
+            ).long_help(
+                "the search pattern which is either a regular expression (default) or a glob \
+                 pattern (if --glob is used). If no pattern has been specified, every entry \
+                 is considered a match. If your pattern starts with a dash (-), make sure to \
+                 pass '--' first, or it will be considered as a flag (fd -- '-foo').")
         )
         .arg(
             Arg::with_name("path-separator")
