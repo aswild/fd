@@ -39,6 +39,11 @@ ifeq ($(BUILD_TYPE),release)
 CARGO_BUILD_FLAGS += --release --locked
 endif
 
+# whether to run install commands with sudo
+ifeq ($(SUDO_INSTALL),1)
+INSTALL := sudo $(INSTALL)
+endif
+
 ifneq ($(TARGET),)
 TARGET_DIR = target/$(TARGET)
 CARGO_BUILD_FLAGS += --target $(TARGET)
