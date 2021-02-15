@@ -175,6 +175,7 @@ pub fn build_app() -> App<'static, 'static> {
                 .short("0")
                 .overrides_with("print0")
                 .conflicts_with("list-details")
+                .hidden_short_help(true)
                 .help("Separate results by the null character")
                 .long_help(
                     "Separate search results by the null character (instead of newlines). \
@@ -296,7 +297,7 @@ pub fn build_app() -> App<'static, 'static> {
                 .conflicts_with("list-details")
                 .help("Execute a command for each search result")
                 .long_help(
-                    "Execute a command for each search result.\n\
+                    "Execute a command for each search result in parallel (use --threads=1 for sequential command execution).\n\
                      All arguments following --exec are taken to be arguments to the command until the \
                      argument ';' is encountered.\n\
                      Each occurrence of the following placeholders is substituted by a path derived from the \
