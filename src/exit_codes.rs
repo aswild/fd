@@ -5,9 +5,9 @@ pub enum ExitCode {
     KilledBySigint,
 }
 
-impl Into<i32> for ExitCode {
-    fn into(self) -> i32 {
-        match self {
+impl From<ExitCode> for i32 {
+    fn from(e: ExitCode) -> i32 {
+        match e {
             ExitCode::Success => 0,
             ExitCode::GeneralError => 1,
             ExitCode::KilledBySigint => 130,
