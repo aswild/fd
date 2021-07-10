@@ -67,8 +67,7 @@ tempdir = "0.3"
 filetime = "0.2.1"
 
 [profile.release]
-lto = true
-codegen-units = 1
+lto = "thin"
 
 [features]
 fd-no-gitversion = []
