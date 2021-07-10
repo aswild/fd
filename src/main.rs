@@ -32,14 +32,7 @@ use crate::filter::{SizeFilter, TimeFilter};
 use crate::options::Options;
 use crate::regex_helper::{pattern_has_uppercase_char, pattern_matches_strings_with_leading_dot};
 
-// We use jemalloc for performance reasons, see https://github.com/sharkdp/fd/pull/481
-// FIXME: re-enable jemalloc on macOS, see comment in Cargo.toml file for more infos
-#[cfg(all(
-    not(windows),
-    not(target_os = "android"),
-    not(target_os = "macos"),
-    not(target_env = "musl")
-))]
+#[cfg(all(target_env = "musl", target_pointer_width = "64"))]
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
