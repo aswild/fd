@@ -426,8 +426,8 @@ fn spawn_senders(
                     if (!file_types.files && entry_type.is_file())
                         || (!file_types.directories && entry_type.is_dir())
                         || (!file_types.symlinks && entry_type.is_symlink())
-                        || (!file_types.sockets && filesystem::is_socket(entry_type))
-                        || (!file_types.pipes && filesystem::is_pipe(entry_type))
+                        || (!file_types.sockets && filesystem::is_socket(*entry_type))
+                        || (!file_types.pipes && filesystem::is_pipe(*entry_type))
                         || (file_types.executables_only
                             && !entry
                                 .metadata()
@@ -437,8 +437,8 @@ fn spawn_senders(
                         || !(entry_type.is_file()
                             || entry_type.is_dir()
                             || entry_type.is_symlink()
-                            || filesystem::is_socket(entry_type)
-                            || filesystem::is_pipe(entry_type))
+                            || filesystem::is_socket(*entry_type)
+                            || filesystem::is_pipe(*entry_type))
                     {
                         return ignore::WalkState::Continue;
                     }
@@ -451,7 +451,7 @@ fn spawn_senders(
             {
                 if let Some(ref owner_constraint) = config.owner_constraint {
                     if let Ok(ref metadata) = entry_path.metadata() {
-                        if !owner_constraint.matches(&metadata) {
+                        if !owner_constraint.matches(metadata) {
                             return ignore::WalkState::Continue;
                         }
                     } else {

@@ -6,12 +6,13 @@ use std::sync::Arc;
 
 use lscolors::{LsColors, Style};
 
+use crate::error::print_error;
 use crate::exit_codes::ExitCode;
 use crate::filesystem::strip_current_dir;
 use crate::options::Options;
 
 fn replace_path_separator(path: &str, new_path_separator: &str) -> String {
-    path.replace(std::path::MAIN_SEPARATOR, &new_path_separator)
+    path.replace(std::path::MAIN_SEPARATOR, new_path_separator)
 }
 
 // TODO: this function is performance critical and can probably be optimized
@@ -28,14 +29,19 @@ pub fn print_entry(
     };
 
     let r = if let Some(ref ls_colors) = config.ls_colors {
-        print_entry_colorized(stdout, path, config, ls_colors, &wants_to_quit)
+        print_entry_colorized(stdout, path, config, ls_colors, wants_to_quit)
     } else {
         print_entry_uncolorized(stdout, path, config)
     };
 
-    if r.is_err() {
-        // Probably a broken pipe. Exit gracefully.
-        process::exit(ExitCode::GeneralError.into());
+    if let Err(e) = r {
+        if e.kind() == ::std::io::ErrorKind::BrokenPipe {
+            // Exit gracefully in case of a broken pipe (e.g. 'fd ... | head -n 3').
+            process::exit(0);
+        } else {
+            print_error(format!("Could not write to output: {}", e));
+            process::exit(ExitCode::GeneralError.into());
+        }
     }
 }
 
@@ -55,7 +61,7 @@ fn print_entry_colorized(
     while let Some((component, style)) = components_iter.next() {
         let mut path_string = component.to_string_lossy();
         if let Some(ref separator) = config.path_separator {
-            *path_string.to_mut() = replace_path_separator(&path_string, &separator);
+            *path_string.to_mut() = replace_path_separator(&path_string, separator);
         }
 
         match (config.color_basename, components_iter.peek()) {
@@ -95,7 +101,7 @@ fn print_entry_uncolorized_base(
 
     let mut path_string = path.to_string_lossy();
     if let Some(ref separator) = config.path_separator {
-        *path_string.to_mut() = replace_path_separator(&path_string, &separator);
+        *path_string.to_mut() = replace_path_separator(&path_string, separator);
     }
     write!(stdout, "{}{}", path_string, separator)
 }
