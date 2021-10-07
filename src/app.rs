@@ -50,6 +50,16 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
+            Arg::with_name("no-ignore-parent")
+                .long("no-ignore-parent")
+                .overrides_with("no-ignore-parent")
+                .hidden_short_help(true)
+                .long_help(
+                    "Show search results from files and directories that would otherwise be \
+                        ignored by '.gitignore', '.ignore', or '.fdignore' files in parent directories.",
+                ),
+        )
+        .arg(
             Arg::with_name("no-global-ignore-file")
                 .long("no-global-ignore-file")
                 .hidden(true)
@@ -297,16 +307,24 @@ pub fn build_app() -> App<'static, 'static> {
                 .conflicts_with("list-details")
                 .help("Execute a command for each search result")
                 .long_help(
-                    "Execute a command for each search result in parallel (use --threads=1 for sequential command execution).\n\
-                     All arguments following --exec are taken to be arguments to the command until the \
-                     argument ';' is encountered.\n\
-                     Each occurrence of the following placeholders is substituted by a path derived from the \
-                     current search result before the command is executed:\n  \
-                       '{}':   path\n  \
+                    "Execute a command for each search result in parallel (use --threads=1 for sequential command execution). \
+                     All positional arguments following --exec are considered to be arguments to the command - not to fd. \
+                     It is therefore recommended to place the '-x'/'--exec' option last.\n\
+                     The following placeholders are substituted before the command is executed:\n  \
+                       '{}':   path (of the current search result)\n  \
                        '{/}':  basename\n  \
                        '{//}': parent directory\n  \
                        '{.}':  path without file extension\n  \
-                       '{/.}': basename without file extension",
+                       '{/.}': basename without file extension\n\n\
+                     If no placeholder is present, an implicit \"{}\" at the end is assumed.\n\n\
+                     Examples:\n\n  \
+                       - find all *.zip files and unzip them:\n\n      \
+                           fd -e zip -x unzip\n\n  \
+                       - find *.h and *.cpp files and run \"clang-format -i ..\" for each of them:\n\n      \
+                           fd -e h -e cpp -x clang-format -i\n\n  \
+                       - Convert all *.jpg files to *.png files:\n\n      \
+                           fd -e jpg -x convert {} {.}.png\
+                    ",
                 ),
         )
         .arg(
@@ -320,16 +338,20 @@ pub fn build_app() -> App<'static, 'static> {
                 .conflicts_with_all(&["exec", "list-details"])
                 .help("Execute a command with all search results at once")
                 .long_help(
-                    "Execute a command with all search results at once.\n\
-                     All arguments following --exec-batch are taken to be arguments to the command until the \
-                     argument ';' is encountered.\n\
-                     A single occurrence of the following placeholders is authorized and substituted by the paths derived from the \
-                     search results before the command is executed:\n  \
-                       '{}':   path\n  \
+                    "Execute the given command once, with all search results as arguments.\n\
+                     One of the following placeholders is substituted before the command is executed:\n  \
+                       '{}':   path (of all search results)\n  \
                        '{/}':  basename\n  \
                        '{//}': parent directory\n  \
                        '{.}':  path without file extension\n  \
-                       '{/.}': basename without file extension",
+                       '{/.}': basename without file extension\n\n\
+                     If no placeholder is present, an implicit \"{}\" at the end is assumed.\n\n\
+                     Examples:\n\n  \
+                       - Find all test_*.py files and open them in your favorite editor:\n\n      \
+                           fd -g 'test_*.py' -X vim\n\n  \
+                       - Find all *.rs files and count the lines with \"wc -l ...\":\n\n      \
+                           fd -e rs -X wc -l\
+                     "
                 ),
         )
         .arg(
@@ -500,6 +522,20 @@ pub fn build_app() -> App<'static, 'static> {
                 .conflicts_with_all(&["exec", "exec-batch", "list-details"])
                 .long_help("Limit the search to a single result and quit immediately. \
                                 This is an alias for '--max-results=1'.")
+        )
+        .arg(
+            Arg::with_name("quiet")
+                .long("quiet")
+                .short("q")
+                .alias("has-results")
+                .hidden_short_help(true)
+                .conflicts_with_all(&["exec", "exec-batch", "list-details", "max-results"])
+                .long_help(
+                    "When the flag is present, the program does not print anything and will \
+                     return with an exit code of 0 if there is at least one match. Otherwise, the \
+                     exit code will be 1. \
+                     '--has-results' can be used as an alias."
+                )
         )
         .arg(
             Arg::with_name("show-errors")
