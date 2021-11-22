@@ -29,7 +29,14 @@ pub fn print_entry(
     };
 
     let r = if let Some(ref ls_colors) = config.ls_colors {
-        print_entry_colorized(stdout, path, config, ls_colors, wants_to_quit)
+        // When following symlinks, stat each path component so that symlinks can be highlighted
+        // accordingly. Normally all parent components must be directories, so we can skip that step
+        // for a performance boost.
+        if config.follow_links {
+            print_entry_colorized_each_component(stdout, path, config, ls_colors, wants_to_quit)
+        } else {
+            print_entry_colorized(stdout, path, config, ls_colors, wants_to_quit)
+        }
     } else {
         print_entry_uncolorized(stdout, path, config)
     };
@@ -98,6 +105,43 @@ fn print_entry_colorized(
     }
 
     Ok(())
+}
+
+// TODO: this function is performance critical and can probably be optimized
+fn print_entry_colorized_each_component(
+    stdout: &mut StdoutLock,
+    path: &Path,
+    config: &Config,
+    ls_colors: &LsColors,
+    wants_to_quit: &Arc<AtomicBool>,
+) -> io::Result<()> {
+    let default_style = ansi_term::Style::default();
+
+    // Traverse the path and colorize each component
+    for (component, style) in ls_colors.style_for_path_components(path) {
+        let style = style
+            .map(Style::to_ansi_term_style)
+            .unwrap_or(default_style);
+
+        let mut path_string = component.to_string_lossy();
+        if let Some(ref separator) = config.path_separator {
+            *path_string.to_mut() = replace_path_separator(&path_string, separator);
+        }
+        write!(stdout, "{}", style.paint(path_string))?;
+
+        // check whether to exit early each iteration of the loop, since style_for_path_components
+        // calls stat() in each iteration.
+        if wants_to_quit.load(Ordering::Relaxed) {
+            writeln!(stdout)?;
+            ExitCode::KilledBySigint.exit();
+        }
+    }
+
+    if config.null_separator {
+        write!(stdout, "\0")
+    } else {
+        writeln!(stdout)
+    }
 }
 
 // TODO: this function is performance critical and can probably be optimized
