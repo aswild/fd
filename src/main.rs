@@ -382,7 +382,6 @@ fn run() -> Result<ExitCode> {
             .context("Failed to parse max. buffer time argument")?
             .map(time::Duration::from_millis),
         ls_colors,
-        color_basename: matches.is_present("color-basename"),
         interactive_terminal,
         file_types: matches.values_of("file-type").map(|values| {
             let mut file_types = FileTypes::default();
