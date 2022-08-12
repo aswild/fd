@@ -1,7 +1,8 @@
+use crate::dir_entry;
 use crate::filesystem;
-use crate::walk;
 
 /// Whether or not to show
+#[derive(Default)]
 pub struct FileTypes {
     pub files: bool,
     pub directories: bool,
@@ -12,22 +13,8 @@ pub struct FileTypes {
     pub empty_only: bool,
 }
 
-impl Default for FileTypes {
-    fn default() -> FileTypes {
-        FileTypes {
-            files: false,
-            directories: false,
-            symlinks: false,
-            sockets: false,
-            pipes: false,
-            executables_only: false,
-            empty_only: false,
-        }
-    }
-}
-
 impl FileTypes {
-    pub fn should_ignore(&self, entry: &walk::DirEntry) -> bool {
+    pub fn should_ignore(&self, entry: &dir_entry::DirEntry) -> bool {
         if let Some(ref entry_type) = entry.file_type() {
             (!self.files && entry_type.is_file())
                 || (!self.directories && entry_type.is_dir())
@@ -37,7 +24,7 @@ impl FileTypes {
                 || (self.executables_only
                     && !entry
                         .metadata()
-                        .map(|m| filesystem::is_executable(m))
+                        .map(filesystem::is_executable)
                         .unwrap_or(false))
                 || (self.empty_only && !filesystem::is_empty(entry))
                 || !(entry_type.is_file()

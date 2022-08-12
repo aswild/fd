@@ -1,10 +1,74 @@
 # Upcoming release
 
+## Features
+
+
+## Bugfixes
+
+- fd returns an error when current working directory does not exist while a search path is specified, see #1072 (@vijfhoek)
+
+
+## Changes
+
+
+## Other
+
+
+
+# v8.4.0
+
+## Features
+
+- Support multiple `--exec <cmd>` instances, see #406 and #960 (@tmccombs)
+
+## Bugfixes
+
+- "Argument list too long" errors can not appear anymore when using `--exec-batch`/`-X`, as the command invocations are automatically batched at the maximum possible size, even if `--batch-size` is not given. See #410 and #1020 (@tavianator)
+
+## Changes
+
+- Directories are now printed with an additional path separator at the end: `foo/bar/`, see #436 and #812 (@yyogo)
+- The `-u` flag was changed to be equivalent to `-HI` (previously, a single `-u` was only equivalent to `-I`). Additional `-u` flags are still allowed, but ignored. See #840 and #986 (@jacksontheel)
+
+## Other
+
+- Added installation instructions for RHEL8, see #989 (@ethsol)
+
+
+# v8.3.2
+
+## Bugfixes
+
+- Invalid absolute path on windows when searching from the drive root, see #931 and #936 (@gbarta)
+
+
+# v8.3.1
+
+## Bugfixes
+
+- Stop implying `--no-ignore-parent` when `--no-vcs-ignore` is supplied, see #907, #901, #908 (@tmccombs)
+- fd no longer waits for the whole traversal if the only matches arrive within max_buffer_time, see #868 and #895 (@tavianator)
+- `--max-results=1` now immediately quits after the first result, see #867
+- `fd -h` does not panic anymore when stdout is closed, see #897
+
+## Changes
+
+- Disable jemalloc on FreeBSD, see #896 (@xanderio)
+- Updated man page, see #912 (@rlue)
+- Updated zsh completions, see #932 (@tmccombs)
+
+
+# v8.3.0
+
 ## Performance improvements
 
+- Colorized output is now significantly faster, see #720 and #853 (@tavianator)
+- Writing to stdout is now buffered if the output does not go to a TTY. This increases performance
+  when the output of `fd` is piped to another program or to a file, see #885 (@tmccombs, original
+  implementation by @sourlemon207)
 - File metadata is now cached between the different filters that require it (e.g. `--owner`,
   `--size`), reducing the number of `stat` syscalls when multiple filters are used; see #863
-- Colorized output is now significantly faster, see #720 and #853 (@tavianator)
+  (@tavianator, original implementation by @alexmaco)
 
 ## Features
 
@@ -18,6 +82,7 @@
 
 ## Bugfixes
 
+- Always show the `./` prefix for search results unless the output is a TTY or `--strip-cwd-prefix` is set, see #760 and #861 (@jcaplan)
 - Set default path separator to `/` in MSYS, see #537 and #730 (@aswild)
 - fd cannot search files under a RAM disk, see #752
 - fd doesn't show substituted drive on Windows, see #365
@@ -35,6 +100,7 @@
 ## Other
 
 - Many documentation updates
+
 
 # v8.2.1
 

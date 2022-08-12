@@ -20,7 +20,7 @@ Quick links:
 * Intuitive syntax: `fd PATTERN` instead of `find -iname '*PATTERN*'`.
 * Regular expression (default) and glob-based patterns.
 * [Very fast](#benchmark) due to parallelized directory traversal.
-* Uses colors to highlight different file types (same as *ls*).
+* Uses colors to highlight different file types (same as `ls`).
 * Supports [parallel command execution](#command-execution)
 * Smart case: the search is case-insensitive by default. It switches to
   case-sensitive if the pattern contains an uppercase
@@ -194,6 +194,11 @@ fd … -X ls -lhd --color=always
 This pattern is so useful that `fd` provides a shortcut. You can use the `-l`/`--list-details`
 option to execute `ls` in this way: `fd … -l`.
 
+The `-X` option is also useful when combining `fd` with [ripgrep](https://github.com/BurntSushi/ripgrep/) (`rg`) in order to search within a certain class of files, like all C++ source files:
+```bash
+fd -e cpp -e cxx -e h -e hpp -X rg 'std::cout'
+```
+
 Convert all `*.jpg` files to `*.png` files:
 ``` bash
 fd -e jpg -x convert {} {.}.png
@@ -295,8 +300,7 @@ FLAGS:
     -a, --absolute-path     Show absolute instead of relative paths
     -l, --list-details      Use a long listing format with file metadata
     -L, --follow            Follow symbolic links
-    -p, --full-path         Search full path (default: file-/dirname only)
-    -0, --print0            Separate results by the null character
+    -p, --full-path         Search full abs. path (default: filename only)
     -h, --help              Prints help information
     -V, --version           Prints version information
 
@@ -309,12 +313,13 @@ OPTIONS:
     -X, --exec-batch <cmd>             Execute a command with all search results at once
     -E, --exclude <pattern>...         Exclude entries that match the given glob pattern
     -c, --color <when>                 When to use colors: never, *auto*, always
-    -S, --size <size>...               Limit results based on the size of files.
+    -S, --size <size>...               Limit results based on the size of files
         --changed-within <date|dur>    Filter by file modification time (newer than)
         --changed-before <date|dur>    Filter by file modification time (older than)
+    -o, --owner <user:group>           Filter by owning user and/or group
 
 ARGS:
-    <pattern>    the search pattern - a regular expression unless '--glob' is used (optional)
+    <pattern>    the search pattern (a regular expression, unless '--glob' is used; optional)
     <path>...    the root directory for the filesystem search (optional)
 ```
 
@@ -530,7 +535,7 @@ Make sure that `$HOME/.local/bin` is in your `$PATH`.
 If you use an older version of Ubuntu, you can download the latest `.deb` package from the
 [release page](https://github.com/sharkdp/fd/releases) and install it via:
 ``` bash
-sudo dpkg -i fd_8.2.1_amd64.deb  # adapt version number and architecture
+sudo dpkg -i fd_8.4.0_amd64.deb  # adapt version number and architecture
 ```
 
 ### On Debian
@@ -550,12 +555,6 @@ Make sure that `$HOME/.local/bin` is in your `$PATH`.
 Starting with Fedora 28, you can install `fd` from the official package sources:
 ``` bash
 dnf install fd-find
-```
-
-For older versions, you can use this [Fedora copr](https://copr.fedorainfracloud.org/coprs/keefle/fd/) to install `fd`:
-``` bash
-dnf copr enable keefle/fd
-dnf install fd
 ```
 
 ### On Alpine Linux
@@ -593,6 +592,22 @@ You can install `fd` via xbps-install:
 xbps-install -S fd
 ```
 
+### On RedHat Enterprise Linux 8 (RHEL8) or Almalinux 8 or Rocky Linux 8
+
+Get the latest fd-v*-x86_64-unknown-linux-gnu.tar.gz file from [sharkdp on github](https://github.com/sharkdp/fd/releases)
+```
+tar xf fd-v*-x86_64-unknown-linux-gnu.tar.gz
+chown -R root:root fd-v*-x86_64-unknown-linux-gnu
+cd fd-v*-x86_64-unknown-linux-gnu
+sudo cp fd /bin
+gzip fd.1
+chown root:root fd.1.gz
+sudo cp fd.1.gz /usr/share/man/man1
+sudo cp autocomplete/fd.bash /usr/share/bash-completion/completions/fd
+source /usr/share/bash-completion/completions/fd
+fd 
+```
+
 ### On macOS
 
 You can install `fd` with [Homebrew](https://formulae.brew.sh/formula/fd):
@@ -617,6 +632,13 @@ scoop install fd
 Or via [Chocolatey](https://chocolatey.org):
 ```
 choco install fd
+```
+
+### On GuixOS
+
+You can install [the fd package](https://guix.gnu.org/en/packages/fd-8.1.1/) from the official repo:
+```
+guix install fd
 ```
 
 ### On NixOS / via Nix
@@ -647,7 +669,7 @@ With Rust's package manager [cargo](https://github.com/rust-lang/cargo), you can
 ```
 cargo install fd-find
 ```
-Note that rust version *1.53.0* or later is required.
+Note that rust version *1.56.0* or later is required.
 
 `make` is also needed for the build.
 

@@ -1,25 +1,26 @@
-use clap::{crate_version, App, AppSettings, Arg};
+use clap::{crate_version, AppSettings, Arg, ColorChoice, Command};
 
-pub fn build_app() -> App<'static, 'static> {
-    let clap_color_setting = if std::env::var_os("NO_COLOR").is_none() {
-        AppSettings::ColoredHelp
+pub fn build_app() -> Command<'static> {
+    let clap_color_choice = if std::env::var_os("NO_COLOR").is_none() {
+        ColorChoice::Auto
     } else {
-        AppSettings::ColorNever
+        ColorChoice::Never
     };
 
-    let mut app = App::new("fd")
+    let mut app = Command::new("fd")
         .version(option_env!("FD_GIT_VERSION").unwrap_or(crate_version!()))
-        .usage("fd [FLAGS/OPTIONS] [<pattern>] [<path>...]")
-        .setting(clap_color_setting)
+        //.usage("fd [FLAGS/OPTIONS] [<pattern>] [<path>...]") // XXX
+        .color(clap_color_choice)
         .setting(AppSettings::DeriveDisplayOrder)
+        .dont_collapse_args_in_usage(true)
         .after_help(
             "Note: `fd -h` prints a short and concise overview while `fd --help` gives all \
                  details.",
         )
         .arg(
-            Arg::with_name("hidden")
+            Arg::new("hidden")
                 .long("hidden")
-                .short("H")
+                .short('H')
                 .overrides_with("hidden")
                 .help("Search hidden files and directories")
                 .long_help(
@@ -30,18 +31,18 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("no-hidden")
+            Arg::new("no-hidden")
                 .long("no-hidden")
                 .overrides_with("hidden")
-                .hidden(true)
+                .hide(true)
                 .long_help(
                     "Overrides --hidden.",
                 ),
         )
         .arg(
-            Arg::with_name("no-ignore")
+            Arg::new("no-ignore")
                 .long("no-ignore")
-                .short("I")
+                .short('I')
                 .overrides_with("no-ignore")
                 .help("Do not respect .(git|fd)ignore files")
                 .long_help(
@@ -51,19 +52,19 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("ignore")
+            Arg::new("ignore")
                 .long("ignore")
                 .overrides_with("no-ignore")
-                .hidden(true)
+                .hide(true)
                 .long_help(
                     "Overrides --no-ignore.",
                 ),
         )
         .arg(
-            Arg::with_name("no-ignore-vcs")
+            Arg::new("no-ignore-vcs")
                 .long("no-ignore-vcs")
                 .overrides_with("no-ignore-vcs")
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .help("Do not respect .gitignore files")
                 .long_help(
                     "Show search results from files and directories that would otherwise be \
@@ -71,19 +72,19 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("ignore-vcs")
+            Arg::new("ignore-vcs")
                 .long("ignore-vcs")
                 .overrides_with("no-ignore-vcs")
-                .hidden(true)
+                .hide(true)
                 .long_help(
                     "Overrides --no-ignore-vcs.",
                 ),
         )
         .arg(
-            Arg::with_name("no-ignore-parent")
+            Arg::new("no-ignore-parent")
                 .long("no-ignore-parent")
                 .overrides_with("no-ignore-parent")
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .help("Do not respect .(git|fd)ignore files in parent directories")
                 .long_help(
                     "Show search results from files and directories that would otherwise be \
@@ -91,29 +92,29 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("no-global-ignore-file")
+            Arg::new("no-global-ignore-file")
                 .long("no-global-ignore-file")
-                .hidden(true)
+                .hide(true)
                 .help("Do not respect the global ignore file")
                 .long_help("Do not respect the global ignore file."),
         )
         .arg(
-            Arg::with_name("rg-alias-hidden-ignore")
-                .short("u")
+            Arg::new("rg-alias-hidden-ignore")
+                .short('u')
                 .long("unrestricted")
                 .overrides_with_all(&["ignore", "no-hidden"])
-                .multiple(true)
-                .hidden_short_help(true)
-                .help("Alias for '--no-ignore', and '--hidden' when given twice")
+                .multiple_occurrences(true) // Allowed for historical reasons
+                .hide_short_help(true)
+                .help("Unrestricted search, alias for '--no-ignore --hidden'")
                 .long_help(
-                    "Alias for '--no-ignore'. Can be repeated. '-uu' is an alias for \
-                         '--no-ignore --hidden'.",
+                    "Perform an unrestricted search, including ignored and hidden files. This is \
+                    an alias for '--no-ignore --hidden'."
                 ),
         )
         .arg(
-            Arg::with_name("case-sensitive")
+            Arg::new("case-sensitive")
                 .long("case-sensitive")
-                .short("s")
+                .short('s')
                 .overrides_with_all(&["ignore-case", "case-sensitive"])
                 .help("Case-sensitive search (default: smart case)")
                 .long_help(
@@ -123,9 +124,9 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("ignore-case")
+            Arg::new("ignore-case")
                 .long("ignore-case")
-                .short("i")
+                .short('i')
                 .overrides_with_all(&["case-sensitive", "ignore-case"])
                 .help("Case-insensitive search (default: smart case)")
                 .long_help(
@@ -135,19 +136,19 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("glob")
+            Arg::new("glob")
                 .long("glob")
-                .short("g")
+                .short('g')
                 .conflicts_with("fixed-strings")
                 .overrides_with("glob")
                 .help("Glob-based search (default: regular expression)")
                 .long_help("Perform a glob-based search instead of a regular expression search."),
         )
         .arg(
-            Arg::with_name("regex")
+            Arg::new("regex")
                 .long("regex")
                 .overrides_with_all(&["glob", "regex"])
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .help("Regular-expression based search (default)")
                 .long_help(
                     "Perform a regular-expression based search (default). This can be used to \
@@ -155,12 +156,12 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("fixed-strings")
+            Arg::new("fixed-strings")
                 .long("fixed-strings")
-                .short("F")
+                .short('F')
                 .alias("literal")
                 .overrides_with("fixed-strings")
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .help("Treat pattern as literal string instead of regex")
                 .long_help(
                     "Treat the pattern as a literal string instead of a regular expression. Note \
@@ -169,9 +170,9 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("absolute-path")
+            Arg::new("absolute-path")
                 .long("absolute-path")
-                .short("a")
+                .short('a')
                 .overrides_with("absolute-path")
                 .help("Show absolute instead of relative paths")
                 .long_help(
@@ -180,18 +181,18 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("relative-path")
+            Arg::new("relative-path")
                 .long("relative-path")
                 .overrides_with("absolute-path")
-                .hidden(true)
+                .hide(true)
                 .long_help(
                     "Overrides --absolute-path.",
                 ),
         )
         .arg(
-            Arg::with_name("list-details")
+            Arg::new("list-details")
                 .long("list-details")
-                .short("l")
+                .short('l')
                 .conflicts_with("absolute-path")
                 .help("Use a long listing format with file metadata")
                 .long_help(
@@ -202,9 +203,9 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("follow")
+            Arg::new("follow")
                 .long("follow")
-                .short("L")
+                .short('L')
                 .alias("dereference")
                 .overrides_with("follow")
                 .help("Follow symbolic links")
@@ -215,18 +216,18 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("no-follow")
+            Arg::new("no-follow")
                 .long("no-follow")
                 .overrides_with("follow")
-                .hidden(true)
+                .hide(true)
                 .long_help(
                     "Overrides --follow.",
                 ),
         )
         .arg(
-            Arg::with_name("full-path")
+            Arg::new("full-path")
                 .long("full-path")
-                .short("p")
+                .short('p')
                 .overrides_with("full-path")
                 .help("Search full abs. path (default: filename only)")
                 .long_help(
@@ -237,12 +238,12 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("null_separator")
+            Arg::new("null_separator")
                 .long("print0")
-                .short("0")
+                .short('0')
                 .overrides_with("print0")
                 .conflicts_with("list-details")
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .help("Separate results by the null character")
                 .long_help(
                     "Separate search results by the null character (instead of newlines). \
@@ -250,9 +251,9 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("max-depth")
+            Arg::new("max-depth")
                 .long("max-depth")
-                .short("d")
+                .short('d')
                 .takes_value(true)
                 .value_name("depth")
                 .help("Set maximum search depth (default: none)")
@@ -263,18 +264,18 @@ pub fn build_app() -> App<'static, 'static> {
         )
         // support --maxdepth as well, for compatibility with rg
         .arg(
-            Arg::with_name("rg-depth")
+            Arg::new("rg-depth")
                 .long("maxdepth")
-                .hidden(true)
+                .hide(true)
                 .takes_value(true)
                 .help("Set maximum search depth (default: none)")
         )
         .arg(
-            Arg::with_name("min-depth")
+            Arg::new("min-depth")
                 .long("min-depth")
                 .takes_value(true)
                 .value_name("depth")
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .help("Only show results starting at given depth")
                 .long_help(
                     "Only show search results starting at the given depth. \
@@ -282,11 +283,11 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("exact-depth")
+            Arg::new("exact-depth")
                 .long("exact-depth")
                 .takes_value(true)
                 .value_name("depth")
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .conflicts_with_all(&["max-depth", "min-depth"])
                 .help("Only show results at exact given depth")
                 .long_help(
@@ -295,19 +296,19 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("prune")
+            Arg::new("prune")
                 .long("prune")
                 .conflicts_with_all(&["size", "exact-depth"])
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .help("Do not traverse into matching directories")
                 .long_help("Do not traverse into directories that match the search criteria. If \
                     you want to exclude specific directories, use the '--exclude=…' option.")
         )
         .arg(
-            Arg::with_name("file-type")
+            Arg::new("file-type")
                 .long("type")
-                .short("t")
-                .multiple(true)
+                .short('t')
+                .multiple_occurrences(true)
                 .number_of_values(1)
                 .takes_value(true)
                 .value_name("filetype")
@@ -366,10 +367,10 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("extension")
+            Arg::new("extension")
                 .long("extension")
-                .short("e")
-                .multiple(true)
+                .short('e')
+                .multiple_occurrences(true)
                 .number_of_values(1)
                 .takes_value(true)
                 .value_name("ext")
@@ -381,10 +382,11 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("exec")
+            Arg::new("exec")
                 .long("exec")
-                .short("x")
+                .short('x')
                 .min_values(1)
+                .multiple_occurrences(true)
                 .allow_hyphen_values(true)
                 .value_terminator(";")
                 .value_name("cmd")
@@ -412,10 +414,11 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("exec-batch")
+            Arg::new("exec-batch")
                 .long("exec-batch")
-                .short("X")
+                .short('X')
                 .min_values(1)
+                .multiple_occurrences(true)
                 .allow_hyphen_values(true)
                 .value_terminator(";")
                 .value_name("cmd")
@@ -439,28 +442,30 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("batch-size")
+            Arg::new("batch-size")
             .long("batch-size")
             .takes_value(true)
             .value_name("size")
-            .hidden_short_help(true)
+            .hide_short_help(true)
             .requires("exec-batch")
             .help("Max number of arguments to run as a batch with -X")
             .long_help(
                 "Maximum number of arguments to pass to the command given with -X. \
                 If the number of results is greater than the given size, \
                 the command given with -X is run again with remaining arguments. \
-                A batch size of zero means there is no limit.",
+                A batch size of zero means there is no limit (default), but note \
+                that batching might still happen due to OS restrictions on the \
+                maximum length of command lines.",
             ),
         )
         .arg(
-            Arg::with_name("exclude")
+            Arg::new("exclude")
                 .long("exclude")
-                .short("E")
+                .short('E')
                 .takes_value(true)
                 .value_name("pattern")
                 .number_of_values(1)
-                .multiple(true)
+                .multiple_occurrences(true)
                 .help("Exclude entries that match the given glob pattern")
                 .long_help(
                     "Exclude files/directories that match the given glob pattern. This \
@@ -472,13 +477,13 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("ignore-file")
+            Arg::new("ignore-file")
                 .long("ignore-file")
                 .takes_value(true)
                 .value_name("path")
                 .number_of_values(1)
-                .multiple(true)
-                .hidden_short_help(true)
+                .multiple_occurrences(true)
+                .hide_short_help(true)
                 .help("Add custom ignore-file in '.gitignore' format")
                 .long_help(
                     "Add a custom ignore-file in '.gitignore' format. These files have a low \
@@ -486,9 +491,9 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("color")
+            Arg::new("color")
                 .long("color")
-                .short("c")
+                .short('c')
                 .takes_value(true)
                 .value_name("when")
                 .possible_values(&["never", "auto", "always"])
@@ -502,12 +507,12 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("threads")
+            Arg::new("threads")
                 .long("threads")
-                .short("j")
+                .short('j')
                 .takes_value(true)
                 .value_name("num")
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .help("Set number of threads")
                 .long_help(
                     "Set number of threads to use for searching & executing (default: number \
@@ -515,13 +520,13 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("size")
+            Arg::new("size")
                 .long("size")
-                .short("S")
+                .short('S')
                 .takes_value(true)
                 .number_of_values(1)
                 .allow_hyphen_values(true)
-                .multiple(true)
+                .multiple_occurrences(true)
                 .help("Limit results based on the size of files")
                 .long_help(
                     "Limit results based on the size of files using the format <+-><NUM><UNIT>.\n   \
@@ -543,10 +548,10 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("max-buffer-time")
+            Arg::new("max-buffer-time")
                 .long("max-buffer-time")
                 .takes_value(true)
-                .hidden(true)
+                .hide(true)
                 .help("Milliseconds to buffer before streaming search results to console")
                 .long_help(
                     "Amount of time in milliseconds to buffer, before streaming the search \
@@ -554,7 +559,7 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("changed-within")
+            Arg::new("changed-within")
                 .long("changed-within")
                 .alias("change-newer-than")
                 .alias("newer")
@@ -574,7 +579,7 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("changed-before")
+            Arg::new("changed-before")
                 .long("changed-before")
                 .alias("change-older-than")
                 .alias("older")
@@ -593,7 +598,7 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("max-results")
+            Arg::new("max-results")
                 .long("max-results")
                 .takes_value(true)
                 .value_name("count")
@@ -603,14 +608,14 @@ pub fn build_app() -> App<'static, 'static> {
                 // same search with `--exec rm` attached and get a reliable removal of
                 // the files they saw in the previous search.
                 .conflicts_with_all(&["exec", "exec-batch", "list-details"])
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .help("Limit number of search results")
                 .long_help("Limit the number of search results to 'count' and quit immediately."),
         )
         .arg(
-            Arg::with_name("max-one-result")
-                .short("1")
-                .hidden_short_help(true)
+            Arg::new("max-one-result")
+                .short('1')
+                .hide_short_help(true)
                 .overrides_with("max-results")
                 .conflicts_with_all(&["exec", "exec-batch", "list-details"])
                 .help("Limit search to a single result")
@@ -618,11 +623,11 @@ pub fn build_app() -> App<'static, 'static> {
                                 This is an alias for '--max-results=1'.")
         )
         .arg(
-            Arg::with_name("quiet")
+            Arg::new("quiet")
                 .long("quiet")
-                .short("q")
+                .short('q')
                 .alias("has-results")
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .conflicts_with_all(&["exec", "exec-batch", "list-details", "max-results"])
                 .help("Print nothing, exit code 0 if match found, 1 otherwise")
                 .long_help(
@@ -633,9 +638,9 @@ pub fn build_app() -> App<'static, 'static> {
                 )
         )
         .arg(
-            Arg::with_name("show-errors")
+            Arg::new("show-errors")
                 .long("show-errors")
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .overrides_with("show-errors")
                 .help("Show filesystem errors")
                 .long_help(
@@ -644,12 +649,13 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("base-directory")
+            Arg::new("base-directory")
                 .long("base-directory")
                 .takes_value(true)
                 .value_name("path")
                 .number_of_values(1)
-                .hidden_short_help(true)
+                .allow_invalid_utf8(true)
+                .hide_short_help(true)
                 .help("Change current working directory")
                 .long_help(
                     "Change the current working directory of fd to the provided path. This \
@@ -660,7 +666,9 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("pattern").help(
+            Arg::new("pattern")
+            .allow_invalid_utf8(true)
+            .help(
                 "the search pattern (a regular expression, unless '--glob' is used; optional)",
             ).long_help(
                 "the search pattern which is either a regular expression (default) or a glob \
@@ -669,11 +677,11 @@ pub fn build_app() -> App<'static, 'static> {
                  pass '--' first, or it will be considered as a flag (fd -- '-foo').")
         )
         .arg(
-            Arg::with_name("path-separator")
+            Arg::new("path-separator")
                 .takes_value(true)
                 .value_name("separator")
                 .long("path-separator")
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .help("Set path separator when printing file paths")
                 .long_help(
                     "Set the path separator to use when printing file paths. The default is \
@@ -681,8 +689,9 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("path")
-                .multiple(true)
+            Arg::new("path")
+                .multiple_occurrences(true)
+                .allow_invalid_utf8(true)
                 .help("the root directory for the filesystem search (optional)")
                 .long_help(
                     "The directory where the filesystem search is rooted (optional). If \
@@ -690,26 +699,38 @@ pub fn build_app() -> App<'static, 'static> {
                 ),
         )
         .arg(
-            Arg::with_name("search-path")
+            Arg::new("search-path")
                 .long("search-path")
                 .takes_value(true)
                 .conflicts_with("path")
-                .multiple(true)
-                .hidden_short_help(true)
+                .multiple_occurrences(true)
+                .hide_short_help(true)
                 .number_of_values(1)
+                .allow_invalid_utf8(true)
                 .help("Provide paths to search as an alternative to the positional <path>")
                 .long_help(
                     "Provide paths to search as an alternative to the positional <path> \
-                         argument. Changes the usage to `fd [FLAGS/OPTIONS] --search-path <path> \
+                         argument. Changes the usage to `fd [OPTIONS] --search-path <path> \
                          --search-path <path2> [<pattern>]`",
                 ),
+        )
+        .arg(
+            Arg::new("strip-cwd-prefix")
+                .long("strip-cwd-prefix")
+                .conflicts_with_all(&["path", "search-path"])
+                .hide_short_help(true)
+                .help("strip './' prefix from non-tty outputs")
+                .long_help(
+                    "By default, relative paths are prefixed with './' when the output goes to a non \
+                     interactive terminal (TTY). Use this flag to disable this behaviour."
+                )
         );
 
     if cfg!(unix) {
         app = app.arg(
-            Arg::with_name("owner")
+            Arg::new("owner")
                 .long("owner")
-                .short("o")
+                .short('o')
                 .takes_value(true)
                 .value_name("user:group")
                 .help("Filter by owning user and/or group")
@@ -730,10 +751,10 @@ pub fn build_app() -> App<'static, 'static> {
     // Provide aliases `mount` and `xdev` for people coming from `find`.
     if cfg!(any(unix, windows)) {
         app = app.arg(
-            Arg::with_name("one-file-system")
+            Arg::new("one-file-system")
                 .long("one-file-system")
                 .aliases(&["mount", "xdev"])
-                .hidden_short_help(true)
+                .hide_short_help(true)
                 .help("Do not descend into a different file system")
                 .long_help(
                     "By default, fd will traverse the file system tree as far as other options \
@@ -745,4 +766,9 @@ pub fn build_app() -> App<'static, 'static> {
     }
 
     app
+}
+
+#[test]
+fn verify_app() {
+    build_app().debug_assert()
 }

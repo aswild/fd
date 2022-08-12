@@ -57,6 +57,7 @@ _fd() {
     + no-ignore-partial # some ignore files
     "(no-ignore-full --no-ignore-vcs)--no-ignore-vcs[don't respect .gitignore files]"
     "!(no-ignore-full --no-global-ignore-file)--no-global-ignore-file[don't respect the global ignore file]"
+    $no'(no-ignore-full --no-ignore-parent)--no-ignore-parent[]'
 
     + '(case)' # case-sensitivity
     {-s,--case-sensitive}'[perform a case-sensitive search]'
@@ -145,7 +146,7 @@ _fd() {
 
     + '(about)' # about flags
     '(: * -)'{-h,--help}'[display help message]'
-    '(: * -)'{-v,--version}'[display version information]'
+    '(: * -)'{-V,--version}'[display version information]'
 
     + path-sep # set path separator for output
     $no'(--path-separator)--path-separator=[set the path separator to use when printing file paths]:path separator'
@@ -153,6 +154,9 @@ _fd() {
     + search-path
     $no'(--base-directory)--base-directory=[change the current working directory to the given path]:directory:_files -/'
     $no'(*)*--search-path=[set search path (instead of positional <path> arguments)]:directory:_files -/'
+
+    + strip-cwd-prefix
+    $no'(strip-cwd-prefix exec-cmds)--strip-cwd-prefix[Strip ./ prefix when output is redirected]'
 
     + args # positional arguments
     '1: :_guard "^-*" pattern'
