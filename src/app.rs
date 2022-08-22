@@ -718,6 +718,7 @@ pub fn build_app() -> Command<'static> {
             Arg::new("strip-cwd-prefix")
                 .long("strip-cwd-prefix")
                 .conflicts_with_all(&["path", "search-path"])
+                .hide(true)
                 .hide_short_help(true)
                 .help("strip './' prefix from non-tty outputs")
                 .long_help(

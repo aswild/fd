@@ -206,6 +206,7 @@ impl TestEnv {
         // Setup *fd* command.
         let mut cmd = process::Command::new(&self.fd_exe);
         cmd.current_dir(self.temp_dir.path().join(path));
+        cmd.env("FD_CWD_PREFIX_ON_PIPE", "1");
         cmd.arg("--no-global-ignore-file").args(args);
 
         // Run *fd*.
@@ -296,6 +297,7 @@ impl TestEnv {
         // Setup *fd* command.
         let mut cmd = process::Command::new(&self.fd_exe);
         cmd.current_dir(self.temp_dir.path().join(path));
+        cmd.env("FD_CWD_PREFIX_ON_PIPE", "1");
         cmd.arg("--no-global-ignore-file").args(args);
 
         // Run *fd*.

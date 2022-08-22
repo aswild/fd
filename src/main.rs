@@ -248,6 +248,27 @@ fn construct_config(matches: clap::ArgMatches, pattern_regex: &str) -> Result<Co
     };
     let command = extract_command(&matches, path_separator.as_deref(), colored_output)?;
 
+    // Evil environment-variable based configuration, forces cwd prefix to always be printed when
+    // stdout isn't a tty. Used to make tests happy despite divergent fork behavior without
+    // sentencing myself to eternal merge conflict hell in tests.rs.
+    // Note that strip_cwd_prefix only applies to "normal" output and does not affect the -l, -x,
+    // or -X options, which always add "./" when no path is given.
+    let search_path_specified = matches.is_present("path") || matches.is_present("search-path");
+    let strip_cwd_prefix = match env::var("FD_CWD_PREFIX_ON_PIPE").as_deref() {
+        // if var is empty, unset, or "0", then strip "./" when no search path arg is given
+        Ok("" | "0") | Err(_) => !search_path_specified,
+        // if var is set to "1" or something else non-empty, then always include "./" prefix when
+        // stdout isn't a terminal. But there's yet another override, the --strip-cwd-prefix
+        // argument which forces it on for test_strip_cwd_prefix()
+        Ok("1") => {
+            !search_path_specified
+                && (interactive_terminal || matches.is_present("strip-cwd-prefix"))
+        }
+        Ok(other) => panic!(
+            "Environment variable FD_CWD_PREFIX_ON_PIPE must be set to '0' or '1', not '{other}'"
+        ),
+    };
+
     Ok(Config {
         case_sensitive,
         search_full_path: matches.is_present("full-path"),
@@ -381,9 +402,7 @@ fn construct_config(matches: clap::ArgMatches, pattern_regex: &str) -> Result<Co
                     None
                 }
             }),
-        strip_cwd_prefix: (!matches.is_present("path")
-            && !matches.is_present("search-path")
-            && (interactive_terminal || matches.is_present("strip-cwd-prefix"))),
+        strip_cwd_prefix,
     })
 }
 
