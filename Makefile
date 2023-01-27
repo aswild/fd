@@ -94,8 +94,7 @@ autocomplete/_fd: contrib/completion/_fd
 	cp $< $@
 
 .PHONY: install
-install: out_dir = $(shell  find $(TARGET_DIR)/$(BUILD_TYPE) -path '*/fd-find-*/out' -type d -exec ls -dt {} + | head -n1)
-install:
+install: completions
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(INSTALL_STRIP) -m755 $(EXE) $(DESTDIR)$(bindir)/
 	$(INSTALL) -Dm644 autocomplete/fd.bash $(DESTDIR)$(bashcompdir)/fd
