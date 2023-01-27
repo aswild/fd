@@ -72,14 +72,35 @@ $(EXE): $(SOURCES)
 clean:
 	$(CARGO) clean
 
+.PHONY: completions
+completions: autocomplete/fd.bash autocomplete/fd.fish autocomplete/fd.ps1 autocomplete/_fd
+
+comp_dir=@mkdir -p autocomplete
+
+autocomplete/fd.bash: $(EXE)
+	$(comp_dir)
+	$(EXE) --gen-completions bash > $@
+
+autocomplete/fd.fish: $(EXE)
+	$(comp_dir)
+	$(EXE) --gen-completions fish > $@
+
+autocomplete/fd.ps1: $(EXE)
+	$(comp_dir)
+	$(EXE) --gen-completions powershell > $@
+
+autocomplete/_fd: contrib/completion/_fd
+	$(comp_dir)
+	cp $< $@
+
 .PHONY: install
 install: out_dir = $(shell  find $(TARGET_DIR)/$(BUILD_TYPE) -path '*/fd-find-*/out' -type d -exec ls -dt {} + | head -n1)
 install:
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(INSTALL_STRIP) -m755 $(EXE) $(DESTDIR)$(bindir)/
-	$(INSTALL) -Dm644 $(out_dir)/fd.bash $(DESTDIR)$(bashcompdir)/fd
-	@#$(INSTALL) -Dm644 $(out_dir)/fd.fish $(DESTDIR)$(fishcompdir)/fd.fish
-	$(INSTALL) -Dm644 contrib/completion/_fd $(DESTDIR)$(zshcompdir)/_fd
+	$(INSTALL) -Dm644 autocomplete/fd.bash $(DESTDIR)$(bashcompdir)/fd
+	$(INSTALL) -Dm644 autocomplete/fd.fish $(DESTDIR)$(fishcompdir)/fd.fish
+	$(INSTALL) -Dm644 autocomplete/_fd $(DESTDIR)$(zshcompdir)/_fd
 	$(INSTALL) -Dm644 doc/fd.1 $(DESTDIR)$(mandir)/man1/fd.1
 
 .PHONY: dist

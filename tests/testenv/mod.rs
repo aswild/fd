@@ -8,7 +8,7 @@ use std::os::windows;
 use std::path::{Path, PathBuf};
 use std::process;
 
-use tempdir::TempDir;
+use tempfile::TempDir;
 
 /// Environment for the integration tests.
 pub struct TestEnv {
@@ -20,6 +20,9 @@ pub struct TestEnv {
 
     /// Normalize each line by sorting the whitespace-separated words
     normalize_line: bool,
+
+    /// Temporary directory for storing test config (global ignore file)
+    config_dir: Option<TempDir>,
 }
 
 /// Create the working directory and the test files.
@@ -27,7 +30,7 @@ fn create_working_directory(
     directories: &[&'static str],
     files: &[&'static str],
 ) -> Result<TempDir, io::Error> {
-    let temp_dir = TempDir::new("fd-tests")?;
+    let temp_dir = tempfile::Builder::new().prefix("fd-tests").tempdir()?;
 
     {
         let root = temp_dir.path();
@@ -57,6 +60,16 @@ fn create_working_directory(
     }
 
     Ok(temp_dir)
+}
+
+fn create_config_directory_with_global_ignore(ignore_file_content: &str) -> io::Result<TempDir> {
+    let config_dir = tempfile::Builder::new().prefix("fd-config").tempdir()?;
+    let fd_dir = config_dir.path().join("fd");
+    fs::create_dir(&fd_dir)?;
+    let mut ignore_file = fs::File::create(fd_dir.join("ignore"))?;
+    ignore_file.write_all(ignore_file_content.as_bytes())?;
+
+    Ok(config_dir)
 }
 
 /// Find the *fd* executable.
@@ -150,6 +163,7 @@ impl TestEnv {
             temp_dir,
             fd_exe,
             normalize_line: false,
+            config_dir: None,
         }
     }
 
@@ -158,6 +172,16 @@ impl TestEnv {
             temp_dir: self.temp_dir,
             fd_exe: self.fd_exe,
             normalize_line: normalize,
+            config_dir: self.config_dir,
+        }
+    }
+
+    pub fn global_ignore_file(self, content: &str) -> TestEnv {
+        let config_dir =
+            create_config_directory_with_global_ignore(content).expect("config directory");
+        TestEnv {
+            config_dir: Some(config_dir),
+            ..self
         }
     }
 
@@ -169,7 +193,9 @@ impl TestEnv {
         let root = self.test_root();
         let broken_symlink_link = root.join(link_path);
         {
-            let temp_target_dir = TempDir::new("fd-tests-broken-symlink")?;
+            let temp_target_dir = tempfile::Builder::new()
+                .prefix("fd-tests-broken-symlink")
+                .tempdir()?;
             let broken_symlink_target = temp_target_dir.path().join("broken_symlink_target");
             fs::File::create(&broken_symlink_target)?;
             #[cfg(unix)]
@@ -186,6 +212,7 @@ impl TestEnv {
     }
 
     /// Get the path of the fd executable.
+    #[cfg_attr(windows, allow(unused))]
     pub fn test_exe(&self) -> &PathBuf {
         &self.fd_exe
     }
@@ -203,14 +230,8 @@ impl TestEnv {
         path: P,
         args: &[&str],
     ) -> process::Output {
-        // Setup *fd* command.
-        let mut cmd = process::Command::new(&self.fd_exe);
-        cmd.current_dir(self.temp_dir.path().join(path));
-        cmd.env("FD_CWD_PREFIX_ON_PIPE", "1");
-        cmd.arg("--no-global-ignore-file").args(args);
-
         // Run *fd*.
-        let output = cmd.output().expect("fd output");
+        let output = self.run_command(path.as_ref(), args);
 
         // Check for exit status.
         if !output.status.success() {
@@ -286,6 +307,21 @@ impl TestEnv {
         self.assert_error_subdirectory(".", args, Some(expected))
     }
 
+    fn run_command(&self, path: &Path, args: &[&str]) -> process::Output {
+        // Setup *fd* command.
+        let mut cmd = process::Command::new(&self.fd_exe);
+        cmd.current_dir(self.temp_dir.path().join(path));
+        if let Some(config_dir) = &self.config_dir {
+            cmd.env("XDG_CONFIG_HOME", config_dir.path());
+        } else {
+            cmd.arg("--no-global-ignore-file");
+        }
+        cmd.args(args);
+
+        // Run *fd*.
+        cmd.output().expect("fd output")
+    }
+
     /// Assert that calling *fd* in the specified path under the root working directory,
     /// and with the specified arguments produces an error with the expected message.
     fn assert_error_subdirectory<P: AsRef<Path>>(
@@ -294,14 +330,7 @@ impl TestEnv {
         args: &[&str],
         expected: Option<&str>,
     ) -> process::ExitStatus {
-        // Setup *fd* command.
-        let mut cmd = process::Command::new(&self.fd_exe);
-        cmd.current_dir(self.temp_dir.path().join(path));
-        cmd.env("FD_CWD_PREFIX_ON_PIPE", "1");
-        cmd.arg("--no-global-ignore-file").args(args);
-
-        // Run *fd*.
-        let output = cmd.output().expect("fd output");
+        let output = self.run_command(path.as_ref(), args);
 
         if let Some(expected) = expected {
             // Normalize both expected and actual output.

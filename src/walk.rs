@@ -3,13 +3,13 @@ use std::io;
 use std::mem;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 use std::{borrow::Cow, io::Write};
 
 use anyhow::{anyhow, Result};
+use crossbeam_channel::{bounded, Receiver, RecvTimeoutError, Sender};
 use ignore::overrides::OverrideBuilder;
 use ignore::{self, WalkBuilder};
 use regex::bytes::Regex;
@@ -36,6 +36,8 @@ enum ReceiverMode {
 /// The Worker threads can result in a valid entry having PathBuf or an error.
 #[allow(clippy::large_enum_variant)]
 pub enum WorkerResult {
+    // Errors should be rare, so it's probably better to allow large_enum_variant than
+    // to box the Entry variant
     Entry(DirEntry),
     Error(ignore::Error),
 }
@@ -45,19 +47,18 @@ pub const MAX_BUFFER_LENGTH: usize = 1000;
 /// Default duration until output buffering switches to streaming.
 pub const DEFAULT_MAX_BUFFER_TIME: Duration = Duration::from_millis(100);
 
-/// Recursively scan the given search path for files / pathnames matching the pattern.
+/// Recursively scan the given search path for files / pathnames matching the patterns.
 ///
 /// If the `--exec` argument was supplied, this will create a thread pool for executing
 /// jobs in parallel from a given command line and the discovered paths. Otherwise, each
 /// path will simply be written to standard output.
-pub fn scan(path_vec: &[PathBuf], pattern: Arc<Regex>, config: Arc<Config>) -> Result<ExitCode> {
-    let mut path_iter = path_vec.iter();
-    let first_path_buf = path_iter
-        .next()
-        .expect("Error: Path vector can not be empty");
-    let (tx, rx) = channel();
+pub fn scan(paths: &[PathBuf], patterns: Arc<Vec<Regex>>, config: Arc<Config>) -> Result<ExitCode> {
+    let first_path = &paths[0];
 
-    let mut override_builder = OverrideBuilder::new(first_path_buf.as_path());
+    // Channel capacity was chosen empircally to perform similarly to an unbounded channel
+    let (tx, rx) = bounded(0x4000 * config.threads);
+
+    let mut override_builder = OverrideBuilder::new(first_path);
 
     for pattern in &config.exclude_patterns {
         override_builder
@@ -68,7 +69,7 @@ pub fn scan(path_vec: &[PathBuf], pattern: Arc<Regex>, config: Arc<Config>) -> R
         .build()
         .map_err(|_| anyhow!("Mismatch in exclude patterns"))?;
 
-    let mut walker = WalkBuilder::new(first_path_buf.as_path());
+    let mut walker = WalkBuilder::new(first_path);
     walker
         .hidden(config.ignore_hidden)
         .ignore(config.read_fdignore)
@@ -76,6 +77,7 @@ pub fn scan(path_vec: &[PathBuf], pattern: Arc<Regex>, config: Arc<Config>) -> R
         .git_ignore(config.read_vcsignore)
         .git_global(config.read_vcsignore)
         .git_exclude(config.read_vcsignore)
+        .require_git(config.require_git_to_read_vcsignore)
         .overrides(overrides)
         .follow_links(config.follow_links)
         // No need to check for supported platforms, option is unavailable on unsupported ones
@@ -122,8 +124,8 @@ pub fn scan(path_vec: &[PathBuf], pattern: Arc<Regex>, config: Arc<Config>) -> R
         }
     }
 
-    for path_entry in path_iter {
-        walker.add(path_entry.as_path());
+    for path in &paths[1..] {
+        walker.add(path);
     }
 
     let parallel_walker = walker.threads(config.threads).build_parallel();
@@ -133,7 +135,7 @@ pub fn scan(path_vec: &[PathBuf], pattern: Arc<Regex>, config: Arc<Config>) -> R
     // Flag specifically for quitting due to ^C
     let interrupt_flag = Arc::new(AtomicBool::new(false));
 
-    if config.ls_colors.is_some() && config.command.is_none() {
+    if config.ls_colors.is_some() && config.is_printing() {
         let quit_flag = Arc::clone(&quit_flag);
         let interrupt_flag = Arc::clone(&interrupt_flag);
 
@@ -152,7 +154,7 @@ pub fn scan(path_vec: &[PathBuf], pattern: Arc<Regex>, config: Arc<Config>) -> R
     let receiver_thread = spawn_receiver(&config, &quit_flag, &interrupt_flag, rx);
 
     // Spawn the sender threads.
-    spawn_senders(&config, &quit_flag, pattern, parallel_walker, tx);
+    spawn_senders(&config, &quit_flag, patterns, parallel_walker, tx);
 
     // Wait for the receiver thread to print out all results.
     let exit_code = receiver_thread.join().unwrap();
@@ -226,11 +228,7 @@ impl<W: Write> ReceiverBuffer<W> {
         match self.mode {
             ReceiverMode::Buffering => {
                 // Wait at most until we should switch to streaming
-                let now = Instant::now();
-                self.deadline
-                    .checked_duration_since(now)
-                    .ok_or(RecvTimeoutError::Timeout)
-                    .and_then(|t| self.rx.recv_timeout(t))
+                self.rx.recv_deadline(self.deadline)
             }
             ReceiverMode::Streaming => {
                 // Wait however long it takes for a result
@@ -342,43 +340,30 @@ fn spawn_receiver(
     let quit_flag = Arc::clone(quit_flag);
     let interrupt_flag = Arc::clone(interrupt_flag);
 
-    let show_filesystem_errors = config.show_filesystem_errors;
     let threads = config.threads;
-    // This will be used to check if output should be buffered when only running a single thread
-    let enable_output_buffering: bool = threads > 1;
     thread::spawn(move || {
         // This will be set to `Some` if the `--exec` argument was supplied.
         if let Some(ref cmd) = config.command {
             if cmd.in_batch_mode() {
-                exec::batch(rx, cmd, show_filesystem_errors, config.batch_size)
+                exec::batch(rx, cmd, &config)
             } else {
-                let shared_rx = Arc::new(Mutex::new(rx));
-
                 let out_perm = Arc::new(Mutex::new(()));
 
                 // Each spawned job will store it's thread handle in here.
                 let mut handles = Vec::with_capacity(threads);
                 for _ in 0..threads {
-                    let rx = Arc::clone(&shared_rx);
+                    let config = Arc::clone(&config);
+                    let rx = rx.clone();
                     let cmd = Arc::clone(cmd);
                     let out_perm = Arc::clone(&out_perm);
 
                     // Spawn a job thread that will listen for and execute inputs.
-                    let handle = thread::spawn(move || {
-                        exec::job(
-                            rx,
-                            cmd,
-                            out_perm,
-                            show_filesystem_errors,
-                            enable_output_buffering,
-                        )
-                    });
+                    let handle = thread::spawn(move || exec::job(rx, cmd, out_perm, &config));
 
                     // Push the handle of the spawned thread into the vector for later joining.
                     handles.push(handle);
                 }
 
-                // Wait for all threads to exit before exiting the program.
                 let exit_codes = handles
                     .into_iter()
                     .map(|handle| handle.join().unwrap())
@@ -399,13 +384,13 @@ fn spawn_receiver(
 fn spawn_senders(
     config: &Arc<Config>,
     quit_flag: &Arc<AtomicBool>,
-    pattern: Arc<Regex>,
+    patterns: Arc<Vec<Regex>>,
     parallel_walker: ignore::WalkParallel,
     tx: Sender<WorkerResult>,
 ) {
     parallel_walker.run(|| {
         let config = Arc::clone(config);
-        let pattern = Arc::clone(&pattern);
+        let patterns = Arc::clone(&patterns);
         let tx_thread = tx.clone();
         let quit_flag = Arc::clone(quit_flag);
 
@@ -475,7 +460,10 @@ fn spawn_senders(
                 }
             };
 
-            if !pattern.is_match(&filesystem::osstr_to_bytes(search_str.as_ref())) {
+            if !patterns
+                .iter()
+                .all(|pat| pat.is_match(&filesystem::osstr_to_bytes(search_str.as_ref())))
+            {
                 return ignore::WalkState::Continue;
             }
 
@@ -543,6 +531,13 @@ fn spawn_senders(
                 }
                 if !matched {
                     return ignore::WalkState::Continue;
+                }
+            }
+
+            if config.is_printing() {
+                if let Some(ls_colors) = &config.ls_colors {
+                    // Compute colors in parallel
+                    entry.style(ls_colors);
                 }
             }
 

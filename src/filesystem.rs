@@ -4,7 +4,7 @@ use std::ffi::OsStr;
 use std::fs;
 use std::io;
 #[cfg(any(unix, target_os = "redox"))]
-use std::os::unix::fs::{FileTypeExt, PermissionsExt};
+use std::os::unix::fs::FileTypeExt;
 use std::path::{Path, PathBuf};
 
 use normpath::PathExt;
@@ -39,16 +39,6 @@ pub fn is_existing_directory(path: &Path) -> bool {
     // Note: we do not use `.exists()` here, as `.` always exists, even if
     // the CWD has been deleted.
     path.is_dir() && (path.file_name().is_some() || path.normalize().is_ok())
-}
-
-#[cfg(any(unix, target_os = "redox"))]
-pub fn is_executable(md: &fs::Metadata) -> bool {
-    md.permissions().mode() & 0o111 != 0
-}
-
-#[cfg(windows)]
-pub fn is_executable(_: &fs::Metadata) -> bool {
-    false
 }
 
 pub fn is_empty(entry: &dir_entry::DirEntry) -> bool {

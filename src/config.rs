@@ -30,6 +30,9 @@ pub struct Config {
     /// Whether to respect VCS ignore files (`.gitignore`, ..) or not.
     pub read_vcsignore: bool,
 
+    /// Whether to require a `.git` directory to respect gitignore files.
+    pub require_git_to_read_vcsignore: bool,
+
     /// Whether to respect the global ignore file or not.
     pub read_global_ignore: bool,
 
@@ -119,4 +122,11 @@ pub struct Config {
 
     /// Whether or not to strip the './' prefix for search results
     pub strip_cwd_prefix: bool,
+}
+
+impl Config {
+    /// Check whether results are being printed.
+    pub fn is_printing(&self) -> bool {
+        self.command.is_none()
+    }
 }
