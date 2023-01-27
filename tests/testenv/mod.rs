@@ -225,6 +225,7 @@ impl TestEnv {
 
     /// Assert that calling *fd* in the specified path under the root working directory,
     /// and with the specified arguments produces the expected output.
+    #[track_caller]
     pub fn assert_success_and_get_output<P: AsRef<Path>>(
         &self,
         path: P,
@@ -241,6 +242,7 @@ impl TestEnv {
         output
     }
 
+    #[track_caller]
     pub fn assert_success_and_get_normalized_output<P: AsRef<Path>>(
         &self,
         path: P,
@@ -255,12 +257,14 @@ impl TestEnv {
     }
 
     /// Assert that calling *fd* with the specified arguments produces the expected output.
+    #[track_caller]
     pub fn assert_output(&self, args: &[&str], expected: &str) {
         self.assert_output_subdirectory(".", args, expected)
     }
 
     /// Similar to assert_output, but able to handle non-utf8 output
     #[cfg(all(unix, not(target_os = "macos")))]
+    #[track_caller]
     pub fn assert_output_raw(&self, args: &[&str], expected: &[u8]) {
         let output = self.assert_success_and_get_output(".", args);
 
@@ -269,6 +273,7 @@ impl TestEnv {
 
     /// Assert that calling *fd* in the specified path under the root working directory,
     /// and with the specified arguments produces the expected output.
+    #[track_caller]
     pub fn assert_output_subdirectory<P: AsRef<Path>>(
         &self,
         path: P,
@@ -287,6 +292,7 @@ impl TestEnv {
 
     /// Assert that calling *fd* with the specified arguments produces the expected error,
     /// and does not succeed.
+    #[track_caller]
     pub fn assert_failure_with_error(&self, args: &[&str], expected: &str) {
         let status = self.assert_error_subdirectory(".", args, Some(expected));
         if status.success() {
@@ -295,6 +301,7 @@ impl TestEnv {
     }
 
     /// Assert that calling *fd* with the specified arguments does not succeed.
+    #[track_caller]
     pub fn assert_failure(&self, args: &[&str]) {
         let status = self.assert_error_subdirectory(".", args, None);
         if status.success() {
@@ -303,6 +310,7 @@ impl TestEnv {
     }
 
     /// Assert that calling *fd* with the specified arguments produces the expected error.
+    #[track_caller]
     pub fn assert_error(&self, args: &[&str], expected: &str) -> process::ExitStatus {
         self.assert_error_subdirectory(".", args, Some(expected))
     }
@@ -324,6 +332,7 @@ impl TestEnv {
 
     /// Assert that calling *fd* in the specified path under the root working directory,
     /// and with the specified arguments produces an error with the expected message.
+    #[track_caller]
     fn assert_error_subdirectory<P: AsRef<Path>>(
         &self,
         path: P,
