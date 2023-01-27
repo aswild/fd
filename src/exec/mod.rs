@@ -39,9 +39,10 @@ pub struct CommandSet {
 }
 
 impl CommandSet {
-    pub fn new<I, S>(input: I) -> Result<CommandSet>
+    pub fn new<I1, I2, S>(input: I1) -> Result<CommandSet>
     where
-        I: IntoIterator<Item = Vec<S>>,
+        I1: IntoIterator<Item = I2>,
+        I2: IntoIterator<Item = S>,
         S: AsRef<str>,
     {
         Ok(CommandSet {
@@ -53,9 +54,10 @@ impl CommandSet {
         })
     }
 
-    pub fn new_batch<I, S>(input: I) -> Result<CommandSet>
+    pub fn new_batch<I1, I2, S>(input: I1) -> Result<CommandSet>
     where
-        I: IntoIterator<Item = Vec<S>>,
+        I1: IntoIterator<Item = I2>,
+        I2: IntoIterator<Item = S>,
         S: AsRef<str>,
     {
         Ok(CommandSet {
