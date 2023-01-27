@@ -1,0 +1,50 @@
+#!/bin/bash
+
+set -e
+
+# This script builds a binary dpkg for Debian based distros. It is based
+# on the script from ripgrep.
+#
+# Note that this requires 'cargo deb', which can be installed with
+# 'cargo install cargo-deb'.
+#
+# This should be run from the root of the fd repo.
+
+TARGET=''
+while (( $# )); do
+    case "$1" in
+        --target)
+            if [[ -z "$2" ]]; then
+                echo >2 "Error: missing argument to --target"
+                exit 1
+            fi
+            TARGET="$2"
+            shift
+            ;;
+    esac
+    shift
+done
+
+if [[ -n "$TARGET" ]]; then
+    TARGET_ARGS=(--target "$TARGET")
+else
+    TARGET_ARGS=()
+fi
+
+if ! command -V cargo-deb > /dev/null 2>&1; then
+    echo "cargo-deb command missing" >&2
+    exit 1
+fi
+
+version="$(git describe --tags --dirty=+ | sed 's/^v//')"
+
+set -x
+
+# generate completions, since they're generated from the fd binary itself.
+# we allow a debug build to run here, and always with the native target since
+# it must be executed.
+make completions
+
+# now build the release binary and package, for the appropriate target. Override
+# the package's version to use the full git version.
+cargo deb "${TARGET_ARGS[@]}" --deb-version "$version"

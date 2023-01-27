@@ -109,3 +109,9 @@ dist: $(EXE)
 	$(INSTALL) -d $(TARGET_DIR)/dist/$(fd_dist_name)
 	$(MAKE) --no-print-directory prefix= DESTDIR=$(PWD)/$(TARGET_DIR)/dist/$(fd_dist_name) install
 	$(TAR) -cvzf $(fd_dist_name).tar.gz --owner=root:0 --group=root:0 -C $(TARGET_DIR)/dist $(fd_dist_name)
+
+# this has no dependencies, the build-deb script handles building everything.
+# The leading + silences jobserver warnings, since build-deb internally calls "make completions"
+.PHONY: deb
+deb:
+	+ci/build-deb
