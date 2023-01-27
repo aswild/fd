@@ -20,7 +20,7 @@ use crate::filter::SizeFilter;
 #[derive(Parser)]
 #[command(
     name = "fd",
-    version,
+    version = option_env!("FD_GIT_VERSION").unwrap_or(clap::crate_version!()),
     about = "A program to find entries in your filesystem",
     after_long_help = "Bugs can be reported on GitHub: https://github.com/sharkdp/fd/issues",
     max_term_width = 98,
