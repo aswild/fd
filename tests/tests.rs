@@ -1819,7 +1819,12 @@ fn test_exec_batch() {
 
         te.assert_failure_with_error(
             &["foo", "--exec-batch", "echo", "{/}", ";", "-x", "echo"],
-            "error: the argument '--exec-batch <cmd>...' cannot be used with '--exec <cmd>...'",
+            "error: the argument '--exec-batch <cmd>...' cannot be used with '--exec <cmd>...'\n\
+            \n\
+            Usage: fd --exec-batch <cmd>... <pattern> [path]...\n\
+            \n\
+            For more information, try '--help'.\n\
+            ",
         );
 
         te.assert_failure_with_error(
