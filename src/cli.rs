@@ -610,7 +610,7 @@ pub struct Opts {
     /// -X/--exec-batch, or -0/--print0 are given, to reduce the risk of a
     /// path starting with '-' being treated as a command line option. Use
     /// this flag to disable this behaviour.
-    #[arg(long, conflicts_with_all(&["path", "search_path"]), hide_short_help = true, long_help)]
+    #[arg(long, hide_short_help = true, long_help)]
     pub strip_cwd_prefix: bool,
 
     /// By default, fd will traverse the file system tree as far as other options
