@@ -693,9 +693,10 @@ impl Opts {
     }
 
     pub fn max_results(&self) -> Option<usize> {
-        self.max_results
-            .filter(|&m| m > 0)
-            .or_else(|| self.max_one_result.then(|| 1))
+        match self.max_results {
+            None | Some(0) => self.max_one_result.then_some(1),
+            Some(n) => Some(n),
+        }
     }
 
     #[cfg(feature = "completions")]
