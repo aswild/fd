@@ -10,6 +10,7 @@ use std::{borrow::Cow, io::Write};
 
 use anyhow::{anyhow, Result};
 use crossbeam_channel::{bounded, Receiver, RecvTimeoutError, Sender};
+use etcetera::BaseStrategy;
 use ignore::overrides::OverrideBuilder;
 use ignore::{self, WalkBuilder};
 use regex::bytes::Regex;
@@ -89,26 +90,17 @@ pub fn scan(paths: &[PathBuf], patterns: Arc<Vec<Regex>>, config: Arc<Config>) -
     }
 
     if config.read_global_ignore {
-        #[cfg(target_os = "macos")]
-        let config_dir_op = std::env::var_os("XDG_CONFIG_HOME")
-            .map(PathBuf::from)
-            .filter(|p| p.is_absolute())
-            .or_else(|| dirs_next::home_dir().map(|d| d.join(".config")));
-
-        #[cfg(not(target_os = "macos"))]
-        let config_dir_op = dirs_next::config_dir();
-
-        if let Some(global_ignore_file) = config_dir_op
-            .map(|p| p.join("fd").join("ignore"))
-            .filter(|p| p.is_file())
-        {
-            let result = walker.add_ignore(global_ignore_file);
-            match result {
-                Some(ignore::Error::Partial(_)) => (),
-                Some(err) => {
-                    print_error(format!("Malformed pattern in global ignore file. {}.", err));
+        if let Ok(basedirs) = etcetera::choose_base_strategy() {
+            let global_ignore_file = basedirs.config_dir().join("fd").join("ignore");
+            if global_ignore_file.is_file() {
+                let result = walker.add_ignore(global_ignore_file);
+                match result {
+                    Some(ignore::Error::Partial(_)) => (),
+                    Some(err) => {
+                        print_error(format!("Malformed pattern in global ignore file. {}.", err));
+                    }
+                    None => (),
                 }
-                None => (),
             }
         }
     }
@@ -347,28 +339,23 @@ fn spawn_receiver(
             if cmd.in_batch_mode() {
                 exec::batch(rx, cmd, &config)
             } else {
-                let out_perm = Arc::new(Mutex::new(()));
+                let out_perm = Mutex::new(());
 
-                // Each spawned job will store it's thread handle in here.
-                let mut handles = Vec::with_capacity(threads);
-                for _ in 0..threads {
-                    let config = Arc::clone(&config);
-                    let rx = rx.clone();
-                    let cmd = Arc::clone(cmd);
-                    let out_perm = Arc::clone(&out_perm);
+                thread::scope(|scope| {
+                    // Each spawned job will store it's thread handle in here.
+                    let mut handles = Vec::with_capacity(threads);
+                    for _ in 0..threads {
+                        let rx = rx.clone();
 
-                    // Spawn a job thread that will listen for and execute inputs.
-                    let handle = thread::spawn(move || exec::job(rx, cmd, out_perm, &config));
+                        // Spawn a job thread that will listen for and execute inputs.
+                        let handle = scope.spawn(|| exec::job(rx, cmd, &out_perm, &config));
 
-                    // Push the handle of the spawned thread into the vector for later joining.
-                    handles.push(handle);
-                }
-
-                let exit_codes = handles
-                    .into_iter()
-                    .map(|handle| handle.join().unwrap())
-                    .collect::<Vec<_>>();
-                merge_exitcodes(exit_codes)
+                        // Push the handle of the spawned thread into the vector for later joining.
+                        handles.push(handle);
+                    }
+                    let exit_codes = handles.into_iter().map(|handle| handle.join().unwrap());
+                    merge_exitcodes(exit_codes)
+                })
             }
         } else {
             let stdout = io::stdout();

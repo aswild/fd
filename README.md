@@ -2,7 +2,7 @@
 
 [![CICD](https://github.com/sharkdp/fd/actions/workflows/CICD.yml/badge.svg)](https://github.com/sharkdp/fd/actions/workflows/CICD.yml)
 [![Version info](https://img.shields.io/crates/v/fd-find.svg)](https://crates.io/crates/fd-find)
-[[中文](https://github.com/chinanf-boy/fd-zh)]
+[[中文](https://github.com/cha0ran/fd-zh)]
 [[한국어](https://github.com/spearkkk/fd-kor)]
 
 `fd` is a program to find entries in your filesystem.
@@ -324,8 +324,8 @@ Options:
   -X, --exec-batch <cmd>...        Execute a command with all search results at once
   -c, --color <when>               When to use colors [default: auto] [possible values: auto,
                                    always, never]
-  -h, --help                       Print help information (use `--help` for more detail)
-  -V, --version                    Print version information
+  -h, --help                       Print help (see more with '--help')
+  -V, --version                    Print version
 ```
 
 ## Benchmark
@@ -540,7 +540,7 @@ Make sure that `$HOME/.local/bin` is in your `$PATH`.
 If you use an older version of Ubuntu, you can download the latest `.deb` package from the
 [release page](https://github.com/sharkdp/fd/releases) and install it via:
 ``` bash
-sudo dpkg -i fd_8.6.0_amd64.deb  # adapt version number and architecture
+sudo dpkg -i fd_8.7.0_amd64.deb  # adapt version number and architecture
 ```
 
 ### On Debian
@@ -599,19 +599,14 @@ xbps-install -S fd
 
 ### On RedHat Enterprise Linux 8 (RHEL8), Almalinux 8, EuroLinux 8 or Rocky Linux 8
 
-Get the latest fd-v*-x86_64-unknown-linux-gnu.tar.gz file from [sharkdp on github](https://github.com/sharkdp/fd/releases)
+You can install [the `fd` package](https://copr.fedorainfracloud.org/coprs/tkbcopr/fd/) from Fedora Copr.
+
+```bash
+dnf copr enable tkbcopr/fd
+dnf install fd
 ```
-tar xf fd-v*-x86_64-unknown-linux-gnu.tar.gz
-chown -R root:root fd-v*-x86_64-unknown-linux-gnu
-cd fd-v*-x86_64-unknown-linux-gnu
-sudo cp fd /bin
-gzip fd.1
-chown root:root fd.1.gz
-sudo cp fd.1.gz /usr/share/man/man1
-sudo cp autocomplete/fd.bash /usr/share/bash-completion/completions/fd
-source /usr/share/bash-completion/completions/fd
-fd
-```
+
+A different version using the [slower](https://github.com/sharkdp/fd/pull/481#issuecomment-534494592) malloc [instead of jemalloc](https://bugzilla.redhat.com/show_bug.cgi?id=2216193#c1) is also available from the EPEL8 repo.
 
 ### On macOS
 
@@ -679,7 +674,7 @@ With Rust's package manager [cargo](https://github.com/rust-lang/cargo), you can
 ```
 cargo install fd-find
 ```
-Note that rust version *1.60.0* or later is required.
+Note that rust version *1.64.0* or later is required.
 
 `make` is also needed for the build.
 
