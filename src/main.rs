@@ -321,25 +321,33 @@ fn extract_command(opts: &mut Opts, colored_output: bool) -> Result<Option<Comma
             }
             let color_arg = format!("--color={}", opts.color.as_str());
 
-            let res = determine_ls_command(&color_arg, colored_output)
+            let res = determine_ls_command(&color_arg, colored_output, opts.details_sort_time)
                 .map(|cmd| CommandSet::new_batch([cmd]).unwrap());
             Some(res)
         })
         .transpose()
 }
 
-fn determine_ls_command(color_arg: &str, colored_output: bool) -> Result<Vec<&str>> {
+fn determine_ls_command(
+    color_arg: &str,
+    colored_output: bool,
+    sort_by_time: bool,
+) -> Result<Vec<&str>> {
     #[allow(unused)]
     let gnu_ls = |command_name| {
         // Note: we use short options here (instead of --long-options) to support more
         // platforms (like BusyBox).
-        vec![
+        let mut args = vec![
             command_name,
             "-l", // long listing format
             "-h", // human readable file sizes
             "-d", // list directories themselves, not their contents
             color_arg,
-        ]
+        ];
+        if sort_by_time {
+            args.push("-t");
+        }
+        args
     };
     let cmd: Vec<&str> = if cfg!(unix) {
         if !cfg!(any(

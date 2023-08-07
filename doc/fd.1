@@ -117,6 +117,10 @@ for '--exec-batch ls -l' with some additional 'ls' options. This can be used
 to see more metadata, to show symlink targets and to achieve a deterministic
 sort order.
 .TP
+.B \-T, \-\-details\-sort\-time
+Sort results by modification time when using -l/--list-details. This is equivalent to passing
+the '-t' flag to 'ls -l'. Currently supported for GNU 'ls' only.
+.TP
 .B \-L, \-\-follow
 By default, fd does not descend into symlinked directories. Using this flag, symbolic links are
 also traversed. The flag can be overridden with '--no-follow'.

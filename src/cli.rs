@@ -215,6 +215,18 @@ pub struct Opts {
     )]
     pub list_details: bool,
 
+    /// Sort results by modification time when using -l/--list-details. This
+    /// is equivalent to passing the '-t' flag to 'ls -l'. Currently supported
+    /// for GNU 'ls' only.
+    #[arg(
+        long,
+        short = 'T',
+        requires("list_details"),
+        help = "Sort results by modification time in -l/--list-details mode",
+        long_help
+    )]
+    pub details_sort_time: bool,
+
     /// Follow symbolic links
     #[arg(
         long,
