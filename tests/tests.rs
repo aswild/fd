@@ -1,4 +1,5 @@
 #![allow(clippy::uninlined_format_args)]
+#![allow(clippy::items_after_test_module)]
 
 mod testenv;
 
