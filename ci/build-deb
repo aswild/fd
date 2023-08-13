@@ -11,6 +11,7 @@ set -e
 # This should be run from the root of the fd repo.
 
 TARGET=''
+INSTALL_ARG=''
 while (( $# )); do
     case "$1" in
         --target)
@@ -20,6 +21,9 @@ while (( $# )); do
             fi
             TARGET="$2"
             shift
+            ;;
+        --install)
+            INSTALL_ARG='--install'
             ;;
     esac
     shift
@@ -47,4 +51,4 @@ make completions
 
 # now build the release binary and package, for the appropriate target. Override
 # the package's version to use the full git version.
-cargo deb "${TARGET_ARGS[@]}" --deb-version "$version"
+cargo deb "${TARGET_ARGS[@]}" --deb-version "$version" $INSTALL_ARG
