@@ -16,6 +16,7 @@ zshcompdir  ?= $(datadir)/zsh/site-functions
 CARGO   ?= cargo
 INSTALL ?= install
 STRIP   ?= strip
+RM      ?= rm -f
 ifeq ($(NOSTRIP),)
 INSTALL_STRIP ?= $(INSTALL) -s --strip-program=$(STRIP)
 else
@@ -42,6 +43,7 @@ endif
 # whether to run install commands with sudo
 ifeq ($(SUDO_INSTALL),1)
 INSTALL := sudo $(INSTALL)
+RM      := sudo $(RM)
 endif
 
 ifneq ($(TARGET),)
@@ -101,6 +103,14 @@ install: completions
 	$(INSTALL) -Dm644 autocomplete/fd.fish $(DESTDIR)$(fishcompdir)/fd.fish
 	$(INSTALL) -Dm644 autocomplete/_fd $(DESTDIR)$(zshcompdir)/_fd
 	$(INSTALL) -Dm644 doc/fd.1 $(DESTDIR)$(mandir)/man1/fd.1
+
+.PHONY: uninstall
+uninstall:
+	$(RM) $(DESTDIR)$(bindir)/$(notdir $(EXE))
+	$(RM) $(DESTDIR)$(bashcompdir)/fd
+	$(RM) $(DESTDIR)$(fishcompdir)/fd.fish
+	$(RM) $(DESTDIR)$(zshcompdir)/_fd
+	$(RM) $(DESTDIR)$(mandir)/man1/fd.1
 
 .PHONY: dist
 dist: output_file = $(shell  find $(TARGET_DIR)/$(BUILD_TYPE) -path '*/fd-find-*/output' -type f -exec ls -dt {} + | head -n1)
