@@ -20,6 +20,12 @@ pub struct FileTypes {
 impl FileTypes {
     pub fn should_ignore(&self, entry: &dir_entry::DirEntry) -> bool {
         if let Some(ref entry_type) = entry.file_type() {
+            // When searching for files, include non-broken symlinks to files without
+            // needing to use -L or -tl.
+            if self.files && entry_type.is_symlink() && entry.path().is_file() {
+                return false;
+            }
+
             (!self.files && entry_type.is_file())
                 || (!self.directories && entry_type.is_dir())
                 || (!self.symlinks && entry_type.is_symlink())
