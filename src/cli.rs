@@ -26,12 +26,14 @@ use crate::filter::SizeFilter;
     max_term_width = 98,
     args_override_self = true,
     group(ArgGroup::new("execs").args(&["exec", "exec_batch", "list_details"]).conflicts_with_all(&[
-            "max_results", "quiet"])),
+            "max_results", "quiet", "max_one_result"])),
 )]
 pub struct Opts {
     /// Include hidden directories and files in the search results (default:
     /// hidden files and directories are skipped). Files and directories are
     /// considered to be hidden if their name starts with a `.` sign (dot).
+    /// Any files or directories that are ignored due to the rules described by
+    /// --no-ignore are still ignored unless otherwise specified.
     /// The flag can be overridden with --no-hidden.
     #[arg(
         long,
@@ -46,7 +48,8 @@ pub struct Opts {
     no_hidden: (),
 
     /// Show search results from files and directories that would otherwise be
-    /// ignored by '.gitignore', '.ignore', '.fdignore', or the global ignore file.
+    /// ignored by '.gitignore', '.ignore', '.fdignore', the global ignore file,
+    /// or the default rule that excludes .git/.
     /// The flag can be overridden with --ignore.
     #[arg(
         long,
@@ -60,8 +63,9 @@ pub struct Opts {
     #[arg(long, overrides_with = "no_ignore", hide = true, action = ArgAction::SetTrue)]
     ignore: (),
 
-    ///Show search results from files and directories that would otherwise be
-    /// ignored by '.gitignore' files. The flag can be overridden with --ignore-vcs.
+    ///Show search results from '.git/' folders and files and directories that
+    ///would otherwise be ignored by '.gitignore' files.
+    ///The flag can be overridden with --ignore-vcs.
     #[arg(
         long,
         hide_short_help = true,
@@ -234,7 +238,7 @@ pub struct Opts {
         alias = "dereference",
         long_help = "By default, fd does not descend into symlinked directories. Using this \
                      flag, symbolic links are also traversed. \
-                     Flag can be overriden with --no-follow."
+                     Flag can be overridden with --no-follow."
     )]
     pub follow: bool,
 
@@ -325,6 +329,8 @@ pub struct Opts {
     /// {n}  'l' or 'symlink':      symbolic links
     /// {n}  's' or 'socket':       socket
     /// {n}  'p' or 'pipe':         named pipe (FIFO)
+    /// {n}  'b' or 'block-device': block device
+    /// {n}  'c' or 'char-device':  character device
     /// {n}{n}  'x' or 'executable':   executables
     /// {n}  'e' or 'empty':        empty files or directories
     ///
@@ -358,7 +364,8 @@ pub struct Opts {
         hide_possible_values = true,
         value_enum,
         help = "Filter by type: file (f), directory (d), symlink (l), \
-                executable (x), empty (e), socket (s), pipe (p)",
+                executable (x), empty (e), socket (s), pipe (p), \
+                char-device (c), block-device (b)",
         long_help
     )]
     pub filetype: Option<Vec<FileType>>,
@@ -517,6 +524,7 @@ pub struct Opts {
         long,
         value_name = "count",
         hide_short_help = true,
+        overrides_with("max_one_result"),
         help = "Limit the number of search results",
         long_help
     )]
@@ -732,6 +740,10 @@ pub enum FileType {
     Directory,
     #[value(alias = "l")]
     Symlink,
+    #[value(alias = "b")]
+    BlockDevice,
+    #[value(alias = "c")]
+    CharDevice,
     /// A file which is executable by the current effective user
     #[value(alias = "x")]
     Executable,
@@ -805,6 +817,7 @@ impl clap::Args for Exec {
                 .help("Execute a command for each search result")
                 .long_help(
                     "Execute a command for each search result in parallel (use --threads=1 for sequential command execution). \
+                     There is no guarantee of the order commands are executed in, and the order should not be depended upon. \
                      All positional arguments following --exec are considered to be arguments to the command - not to fd. \
                      It is therefore recommended to place the '-x'/'--exec' option last.\n\
                      The following placeholders are substituted before the command is executed:\n  \
@@ -812,7 +825,9 @@ impl clap::Args for Exec {
                        '{/}':  basename\n  \
                        '{//}': parent directory\n  \
                        '{.}':  path without file extension\n  \
-                       '{/.}': basename without file extension\n\n\
+                       '{/.}': basename without file extension\n  \
+                       '{{':   literal '{' (for escaping)\n  \
+                       '}}':   literal '}' (for escaping)\n\n\
                      If no placeholder is present, an implicit \"{}\" at the end is assumed.\n\n\
                      Examples:\n\n  \
                        - find all *.zip files and unzip them:\n\n      \
@@ -837,12 +852,15 @@ impl clap::Args for Exec {
                 .help("Execute a command with all search results at once")
                 .long_help(
                     "Execute the given command once, with all search results as arguments.\n\
+                     The order of the arguments is non-deterministic, and should not be relied upon.\n\
                      One of the following placeholders is substituted before the command is executed:\n  \
                        '{}':   path (of all search results)\n  \
                        '{/}':  basename\n  \
                        '{//}': parent directory\n  \
                        '{.}':  path without file extension\n  \
-                       '{/.}': basename without file extension\n\n\
+                       '{/.}': basename without file extension\n  \
+                       '{{':   literal '{' (for escaping)\n  \
+                       '}}':   literal '}' (for escaping)\n\n\
                      If no placeholder is present, an implicit \"{}\" at the end is assumed.\n\n\
                      Examples:\n\n  \
                        - Find all test_*.py files and open them in your favorite editor:\n\n      \

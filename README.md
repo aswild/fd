@@ -314,7 +314,8 @@ Options:
   -d, --max-depth <depth>          Set maximum search depth (default: none)
   -E, --exclude <pattern>          Exclude entries that match the given glob pattern
   -t, --type <filetype>            Filter by type: file (f), directory (d), symlink (l),
-                                   executable (x), empty (e), socket (s), pipe (p)
+                                   executable (x), empty (e), socket (s), pipe (p),
+                                   block-device (b), char-device (c)
   -e, --extension <ext>            Filter by file extension
   -S, --size <size>                Limit results based on the size of files
       --changed-within <date|dur>  Filter by file modification time (newer than)
@@ -488,16 +489,17 @@ In emacs, run `M-x find-file-in-project-by-selected` to find matching files. Alt
 
 ### Printing the output as a tree
 
-To format the output of `fd` similar to the `tree` command, install [`as-tree`] and pipe the output
-of `fd` to `as-tree`:
+To format the output of `fd` as a file-tree you can use the `tree` command with
+`--fromfile`:
 ```bash
-fd | as-tree
+❯ fd | tree --fromfile
 ```
 
-This can be more useful than running `tree` by itself because `tree` does not ignore any files by
-default, nor does it support as rich a set of options as `fd` does to control what to print:
+This can be more useful than running `tree` by itself because `tree` does not
+ignore any files by default, nor does it support as rich a set of options as
+`fd` does to control what to print:
 ```bash
-❯ fd --extension rs | as-tree
+❯ fd --extension rs | tree --fromfile
 .
 ├── build.rs
 └── src
@@ -505,9 +507,10 @@ default, nor does it support as rich a set of options as `fd` does to control wh
     └── error.rs
 ```
 
-For more information about `as-tree`, see [the `as-tree` README][`as-tree`].
-
-[`as-tree`]: https://github.com/jez/as-tree
+On bash and similar you can simply create an alias:
+```bash
+❯ alias as-tree='tree --fromfile'
+```
 
 ### Using fd with `xargs` or `parallel`
 
@@ -540,7 +543,7 @@ Make sure that `$HOME/.local/bin` is in your `$PATH`.
 If you use an older version of Ubuntu, you can download the latest `.deb` package from the
 [release page](https://github.com/sharkdp/fd/releases) and install it via:
 ``` bash
-sudo dpkg -i fd_8.7.0_amd64.deb  # adapt version number and architecture
+sudo dpkg -i fd_8.7.1_amd64.deb # adapt version number and architecture
 ```
 
 ### On Debian
