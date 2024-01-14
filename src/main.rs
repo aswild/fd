@@ -98,7 +98,7 @@ fn run() -> Result<ExitCode> {
         .map(|pat| build_regex(pat, &config))
         .collect::<Result<Vec<Regex>>>()?;
 
-    walk::scan(&search_paths, Arc::new(regexps), Arc::new(config))
+    walk::scan(&search_paths, regexps, config)
 }
 
 #[cfg(feature = "completions")]
@@ -213,11 +213,13 @@ fn construct_config(mut opts: Opts, pattern_regexps: &[String]) -> Result<Config
     let ansi_colors_support = true;
 
     let interactive_terminal = std::io::stdout().is_terminal();
+
     let colored_output = match opts.color {
         ColorWhen::Always => true,
         ColorWhen::Never => false,
         ColorWhen::Auto => {
-            ansi_colors_support && env::var_os("NO_COLOR").is_none() && interactive_terminal
+            let no_color = env::var_os("NO_COLOR").is_some_and(|x| !x.is_empty());
+            ansi_colors_support && !no_color && interactive_terminal
         }
     };
 
@@ -247,7 +249,7 @@ fn construct_config(mut opts: Opts, pattern_regexps: &[String]) -> Result<Config
         max_depth: opts.max_depth(),
         min_depth: opts.min_depth(),
         prune: opts.prune,
-        threads: opts.threads(),
+        threads: opts.threads().get(),
         max_buffer_time: opts.max_buffer_time,
         ls_colors,
         interactive_terminal,
@@ -321,22 +323,22 @@ fn extract_command(opts: &mut Opts, colored_output: bool) -> Result<Option<Comma
             if !opts.list_details {
                 return None;
             }
-            let color_arg = format!("--color={}", opts.color.as_str());
 
-            let res = determine_ls_command(&color_arg, colored_output, opts.details_sort_time)
+            let res = determine_ls_command(colored_output, opts.details_sort_time)
                 .map(|cmd| CommandSet::new_batch([cmd]).unwrap());
             Some(res)
         })
         .transpose()
 }
 
-fn determine_ls_command(
-    color_arg: &str,
-    colored_output: bool,
-    sort_by_time: bool,
-) -> Result<Vec<&str>> {
+fn determine_ls_command(colored_output: bool, sort_by_time: bool) -> Result<Vec<&'static str>> {
     #[allow(unused)]
     let gnu_ls = |command_name| {
+        let color_arg = if colored_output {
+            "--color=always"
+        } else {
+            "--color=never"
+        };
         // Note: we use short options here (instead of --long-options) to support more
         // platforms (like BusyBox).
         let mut args = vec![
