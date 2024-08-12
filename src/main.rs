@@ -9,6 +9,8 @@ mod exit_codes;
 mod filesystem;
 mod filetypes;
 mod filter;
+mod fmt;
+mod hyperlink;
 mod output;
 mod regex_helper;
 mod walk;
@@ -25,7 +27,7 @@ use globset::GlobBuilder;
 use lscolors::LsColors;
 use regex::bytes::{Regex, RegexBuilder, RegexSetBuilder};
 
-use crate::cli::{ColorWhen, Opts};
+use crate::cli::{ColorWhen, HyperlinkWhen, Opts};
 use crate::config::Config;
 use crate::exec::CommandSet;
 use crate::exit_codes::ExitCode;
@@ -228,6 +230,11 @@ fn construct_config(mut opts: Opts, pattern_regexps: &[String]) -> Result<Config
     } else {
         None
     };
+    let hyperlink = match opts.hyperlink {
+        HyperlinkWhen::Always => true,
+        HyperlinkWhen::Never => false,
+        HyperlinkWhen::Auto => colored_output,
+    };
     let command = extract_command(&mut opts, colored_output)?;
     let has_command = command.is_some();
 
@@ -252,6 +259,7 @@ fn construct_config(mut opts: Opts, pattern_regexps: &[String]) -> Result<Config
         threads: opts.threads().get(),
         max_buffer_time: opts.max_buffer_time,
         ls_colors,
+        hyperlink,
         interactive_terminal,
         file_types: opts.filetype.as_ref().map(|values| {
             use crate::cli::FileType::*;
@@ -297,6 +305,10 @@ fn construct_config(mut opts: Opts, pattern_regexps: &[String]) -> Result<Config
                     .build()
             })
             .transpose()?,
+        format: opts
+            .format
+            .as_deref()
+            .map(crate::fmt::FormatTemplate::parse),
         command: command.map(Arc::new),
         batch_size: opts.batch_size,
         exclude_patterns: opts.exclude.iter().map(|p| String::from("!") + p).collect(),
@@ -309,8 +321,7 @@ fn construct_config(mut opts: Opts, pattern_regexps: &[String]) -> Result<Config
         path_separator,
         actual_path_separator,
         max_results: opts.max_results(),
-        strip_cwd_prefix: (opts.no_search_paths()
-            && (opts.strip_cwd_prefix || !(opts.null_separator || has_command))),
+        strip_cwd_prefix: opts.strip_cwd_prefix(|| !(opts.null_separator || has_command)),
     })
 }
 

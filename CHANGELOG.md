@@ -2,11 +2,10 @@
 
 ## Features
 
-- Add `dir` as an alias to `directory` when using `-t` \ `--type`, see #1460 and #1464 (@Ato2207).
+- Add --hyperlink option to add OSC 8 hyperlinks to output
+
 
 ## Bugfixes
-
-- Respect NO_COLOR environment variable with `--list-details` option. (#1455)
 
 
 ## Changes
@@ -14,7 +13,44 @@
 
 ## Other
 
+# 10.1.0
 
+## Features
+
+- Allow passing an optional argument to `--strip-cwd-prefix` of "always", "never", or "auto". to force whether the cwd prefix is stripped or not.
+- Add a `--format` option which allows using a format template for direct ouput similar to the template used for `--exec`. (#1043)
+
+## Bugfixes
+- Fix aarch64 page size again. This time it should actually work. (#1085, #1549) (@tavianator)
+
+
+## Other
+
+- aarch64-apple-darwin target added to builds on the release page. Note that this is a tier 2 rust target.
+
+# v10.0.0
+
+## Features
+
+- Add `dir` as an alias to `directory` when using `-t` \ `--type`, see #1460 and #1464 (@Ato2207).
+- Add support for @%s date format in time filters similar to GNU date (seconds since Unix epoch for --older/--newer), see #1493 (@nabellows)
+- Breaking: No longer automatically ignore `.git` when using `--hidden` with vcs ignore enabled. This reverts the change in v9.0.0. While this feature
+  was often useful, it also broke some existing workflows, and there wasn't a good way to opt out of it. And there isn't really a good way for us to add
+  a way to opt out of it. And you can easily get similar behavior by adding `.git/` to your global fdignore file.
+    See #1457.
+
+## Bugfixes
+
+- Respect NO_COLOR environment variable with `--list-details` option. (#1455)
+- Fix bug that would cause hidden files to be included despite gitignore rules
+  if search path is "." (#1461, BurntSushi/ripgrep#2711).
+- aarch64 builds now use 64k page sizes with jemalloc. This fixes issues on some systems, such as ARM Macs that
+  have a larger system page size than the system that the binary was built on. (#1547)
+- Address [CVE-2024-24576](https://blog.rust-lang.org/2024/04/09/cve-2024-24576.html), by increasing minimum rust version.
+
+
+## Changes
+- Minimum supported rust version is now 1.77.2
 
 
 # v9.0.0

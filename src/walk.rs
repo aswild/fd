@@ -12,7 +12,7 @@ use anyhow::{anyhow, Result};
 use crossbeam_channel::{bounded, Receiver, RecvTimeoutError, SendError, Sender};
 use etcetera::BaseStrategy;
 use ignore::overrides::{Override, OverrideBuilder};
-use ignore::{self, WalkBuilder, WalkParallel, WalkState};
+use ignore::{WalkBuilder, WalkParallel, WalkState};
 use regex::bytes::Regex;
 
 use crate::config::Config;
@@ -250,7 +250,12 @@ impl<'a, W: Write> ReceiverBuffer<'a, W> {
 
     /// Output a path.
     fn print(&mut self, entry: &DirEntry) -> Result<(), ExitCode> {
-        output::print_entry(&mut self.stdout, entry, self.config);
+        if let Err(e) = output::print_entry(&mut self.stdout, entry, self.config) {
+            if e.kind() != ::std::io::ErrorKind::BrokenPipe {
+                print_error(format!("Could not write to output: {}", e));
+                return Err(ExitCode::GeneralError);
+            }
+        }
 
         if self.interrupt_flag.load(Ordering::Relaxed) {
             // Ignore any errors on flush, because we're about to exit anyway
@@ -332,10 +337,6 @@ impl WorkerState {
             builder
                 .add(pattern)
                 .map_err(|e| anyhow!("Malformed exclude pattern: {}", e))?;
-        }
-
-        if config.read_vcsignore {
-            builder.add("!.git/").expect("Invalid exclude pattern");
         }
 
         builder
