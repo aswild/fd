@@ -26,5 +26,7 @@ fn main() {
                 println!("cargo:rustc-env=FD_GIT_VERSION={git_version_trimmed}");
             }
         }
+        println!("cargo:rerun-if-changed=.git/index");
+        println!("cargo:rerun-if-changed=.git/HEAD");
     }
 }
