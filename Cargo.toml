@@ -16,7 +16,7 @@ license = "MIT OR Apache-2.0"
 name = "fd-find"
 readme = "README.md"
 repository = "https://github.com/sharkdp/fd"
-version = "10.1.0"
+version = "10.2.0"
 edition= "2021"
 rust-version = "1.74.0"
 
@@ -37,8 +37,8 @@ version_check = "0.9"
 aho-corasick = "1.1"
 nu-ansi-term = "0.50"
 argmax = "0.3.1"
-ignore = "0.4.22"
-regex = "1.10.5"
+ignore = "0.4.23"
+regex = "1.11.1"
 regex-syntax = "0.8"
 ctrlc = "3.2"
 humantime = "2.1"
@@ -47,11 +47,11 @@ anyhow = "1.0"
 etcetera = "0.8"
 normpath = "1.1.1"
 crossbeam-channel = "0.5.13"
-clap_complete = {version = "4.5.8", optional = true}
+clap_complete = {version = "4.5.28", optional = true}
 faccess = "0.2.4"
 
 [dependencies.clap]
-version = "4.5.13"
+version = "4.5.20"
 features = ["suggestions", "color", "wrap_help", "cargo", "derive"]
 
 [dependencies.chrono]
@@ -60,7 +60,7 @@ default-features = false
 features = ["std", "clock"]
 
 [dependencies.lscolors]
-version = "0.18"
+version = "0.20"
 default-features = false
 features = ["nu-ansi-term"]
 
@@ -75,7 +75,7 @@ jemallocator = { version = "0.5.4", optional = true }
 
 [dev-dependencies]
 diff = "0.1"
-tempfile = "3.10"
+tempfile = "3.13"
 filetime = "0.2"
 test-case = "3.3"
 
