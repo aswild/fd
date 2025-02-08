@@ -46,16 +46,16 @@ globset = "0.4"
 anyhow = "1.0"
 etcetera = "0.8"
 normpath = "1.1.1"
-crossbeam-channel = "0.5.13"
-clap_complete = {version = "4.5.28", optional = true}
+crossbeam-channel = "0.5.14"
+clap_complete = {version = "4.5.44", optional = true}
 faccess = "0.2.4"
 
 [dependencies.clap]
-version = "4.5.20"
+version = "4.5.27"
 features = ["suggestions", "color", "wrap_help", "cargo", "derive"]
 
 [dependencies.chrono]
-version = "0.4.38"
+version = "0.4.39"
 default-features = false
 features = ["std", "clock"]
 
@@ -75,7 +75,7 @@ jemallocator = { version = "0.5.4", optional = true }
 
 [dev-dependencies]
 diff = "0.1"
-tempfile = "3.13"
+tempfile = "3.16"
 filetime = "0.2"
 test-case = "3.3"
 
