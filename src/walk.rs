@@ -10,7 +10,6 @@ use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, Result};
 use crossbeam_channel::{bounded, Receiver, RecvTimeoutError, SendError, Sender};
-use etcetera::BaseStrategy;
 use ignore::overrides::{Override, OverrideBuilder};
 use ignore::{WalkBuilder, WalkParallel, WalkState};
 use regex::bytes::Regex;
@@ -369,17 +368,24 @@ impl WorkerState {
         }
 
         if config.read_global_ignore {
-            if let Ok(basedirs) = etcetera::choose_base_strategy() {
-                let global_ignore_file = basedirs.config_dir().join("fd").join("ignore");
-                if global_ignore_file.is_file() {
-                    let result = builder.add_ignore(global_ignore_file);
-                    match result {
-                        Some(ignore::Error::Partial(_)) => (),
-                        Some(err) => {
-                            print_error(format!("Malformed pattern in global ignore file. {err}."));
-                        }
-                        None => (),
+            let global_ignore_opt = if cfg!(target_os = "macos") {
+                std::env::var_os("XDG_CONFIG_HOME")
+                    .map(PathBuf::from)
+                    .filter(|p| p.is_absolute())
+                    .or_else(|| dirs::home_dir().map(|d| d.join(".config")))
+            } else {
+                dirs::config_dir()
+            }
+            .map(|p| p.join("fd").join("ignore"))
+            .filter(|p| p.is_file());
+
+            if let Some(global_ignore_file) = global_ignore_opt {
+                match builder.add_ignore(global_ignore_file) {
+                    Some(ignore::Error::Partial(_)) => (),
+                    Some(err) => {
+                        print_error(format!("Malformed pattern in global ignore file. {err}."));
                     }
+                    None => (),
                 }
             }
         }
