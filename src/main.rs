@@ -36,11 +36,7 @@ use crate::filter::OwnerFilter;
 use crate::filter::TimeFilter;
 use crate::regex_helper::{pattern_has_uppercase_char, pattern_matches_strings_with_leading_dot};
 
-#[cfg(all(
-    target_env = "musl",
-    target_pointer_width = "64",
-    feature = "use-jemalloc"
-))]
+#[cfg(feature = "jemalloc")]
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
