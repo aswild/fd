@@ -51,4 +51,4 @@ make completions
 
 # now build the release binary and package, for the appropriate target. Override
 # the package's version to use the full git version.
-cargo deb "${TARGET_ARGS[@]}" --deb-version "$version" $INSTALL_ARG
+cargo deb "${TARGET_ARGS[@]}" --features jemalloc --deb-version "$version" $INSTALL_ARG
