@@ -1774,12 +1774,10 @@ fn test_exec() {
     }
 }
 
+// TODO test for windows
+#[cfg(not(windows))]
 #[test]
 fn test_exec_multi() {
-    // TODO test for windows
-    if cfg!(windows) {
-        return;
-    }
     let (te, abs_path) = get_test_env_with_abs_path(DEFAULT_DIRS, DEFAULT_FILES);
 
     te.assert_output(
@@ -1822,9 +1820,11 @@ fn test_exec_multi() {
         e1 e2",
     );
 
+    // We use printf here because we need to suppress a newline and
+    // echo -n is not POSIX-compliant.
     te.assert_output(
         &[
-            "foo", "--exec", "echo", "-n", "{/}: ", ";", "--exec", "echo", "{//}",
+            "foo", "--exec", "printf", "%s", "{/}: ", ";", "--exec", "printf", "%s\\n", "{//}",
         ],
         "a.foo: .
         b.foo: ./one
@@ -2610,7 +2610,7 @@ fn test_strip_cwd_prefix() {
 /// When fd is ran from a non-existent working directory, but an existent
 /// directory is passed in the arguments, it should still run fine
 #[test]
-#[cfg(not(windows))]
+#[cfg(all(not(windows), not(target_os = "illumos")))]
 fn test_invalid_cwd() {
     let te = TestEnv::new(&[], &[]);
 
