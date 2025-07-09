@@ -37,7 +37,7 @@ BUILD_TYPE := release
 endif
 # set flags for release build
 ifeq ($(BUILD_TYPE),release)
-CARGO_BUILD_FLAGS += --release --locked
+CARGO_BUILD_FLAGS += --release --locked --features jemalloc
 endif
 
 # whether to run install commands with sudo
@@ -69,6 +69,10 @@ SOURCES = $(shell find src -type f) build.rs Cargo.toml
 build: $(EXE)
 $(EXE): $(SOURCES)
 	$(CARGO) build $(CARGO_BUILD_FLAGS)
+
+.PHONY: test
+test:
+	$(CARGO) test $(CARGO_BUILD_FLAGS)
 
 .PHONY: clean
 clean:
