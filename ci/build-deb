@@ -51,4 +51,7 @@ make completions
 
 # now build the release binary and package, for the appropriate target. Override
 # the package's version to use the full git version.
+export CC=clang
+export CARGO_PROFILE_RELEASE_LTO=true
+export RUSTFLAGS="$RUSTFLAGS -Clink-arg=-fuse-ld=lld"
 cargo deb "${TARGET_ARGS[@]}" --features jemalloc --deb-version "$version" $INSTALL_ARG
