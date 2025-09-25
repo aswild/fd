@@ -27,6 +27,19 @@ While it does not aim to support all of `find`'s powerful functionality, it prov
 * The command name is *50%* shorter[\*](https://github.com/ggreer/the_silver_searcher) than
   `find` :-).
 
+## Sponsors
+
+A special *thank you* goes to our biggest <a href="doc/sponsors.md">sponsor</a>:<br>
+
+<a href="https://tuple.app/fd">
+  <img src="doc/sponsors/tuple-logo.png" width="200" alt="Tuple">
+  <br>
+  <strong>Tuple, the premier screen sharing app for developers</strong>
+  <br>
+  <sub>Available for MacOS &amp; Windows</sub>
+</a>
+
+
 ## Demo
 
 ![Demo](doc/screencast.svg)
@@ -723,6 +736,16 @@ cargo test
 # Install
 cargo install --path .
 ```
+
+### Completions
+
+Tab completions for several shells are included in the "autocomplete" directory. To use these completions put the file in an appropriate location for your shell, and depending on
+your shell, you may need to source the file as well:
+
+- bash: you will need to source the fd.bash file in your ~/.bashrc file. Or put it in a directory of files that are all sourced.
+- zsh: move the "_fd" file to somewhere on your fpath
+- fish: Put fd.fish in ~/.config/fish/completions
+- powershell: Source the fd.ps1 file from one of the files in  the [profile scripts locations](https://learn.microsoft.com/en-us/powershell/scripting/learn/shell/creating-profiles?view=powershell-7.5).
 
 ## Maintainers
 
