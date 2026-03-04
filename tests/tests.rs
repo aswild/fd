@@ -1366,6 +1366,36 @@ fn test_type_empty() {
     te.assert_output(&["--type", "empty", "--type", "directory"], "dir_empty/");
 }
 
+/// Test `--type regular-file`
+#[cfg(unix)]
+#[test]
+fn test_type_regular_file() {
+    let te = TestEnv::new(DEFAULT_DIRS, DEFAULT_FILES);
+    std::os::unix::fs::symlink("a.foo", te.test_root().join("a_symlink.foo"))
+        .expect("unable to create symlink");
+
+    te.assert_output(
+        &["--type", "f"],
+        "a.foo
+        a_symlink.foo
+        e1 e2
+        one/b.foo
+        one/two/c.foo
+        one/two/C.Foo2
+        one/two/three/d.foo",
+    );
+
+    te.assert_output(
+        &["--type", "F"],
+        "a.foo
+        e1 e2
+        one/b.foo
+        one/two/c.foo
+        one/two/C.Foo2
+        one/two/three/d.foo",
+    );
+}
+
 /// File extension (--extension)
 #[test]
 fn test_extension() {

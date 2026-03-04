@@ -325,9 +325,10 @@ pub struct Opts {
     pub prune: bool,
 
     /// Filter the search by type:
-    /// {n}  'f' or 'file':         regular files
+    /// {n}  'f' or 'file':         regular files (and symlinks to regular files)
     /// {n}  'd' or 'dir' or 'directory':    directories
     /// {n}  'l' or 'symlink':      symbolic links
+    /// {n}  'F' or 'regular-file': regular files only (excluding symlinks)
     /// {n}  's' or 'socket':       socket
     /// {n}  'p' or 'pipe':         named pipe (FIFO)
     /// {n}  'b' or 'block-device': block device
@@ -365,7 +366,7 @@ pub struct Opts {
         hide_possible_values = true,
         value_enum,
         help = "Filter by type: file (f), directory (d/dir), symlink (l), \
-                executable (x), empty (e), socket (s), pipe (p), \
+                regular file (F), executable (x), empty (e), socket (s), pipe (p), \
                 char-device (c), block-device (b)",
         long_help
     )]
@@ -803,6 +804,9 @@ pub enum FileType {
     Directory,
     #[value(alias = "l")]
     Symlink,
+    /// A regular file only (excluding symlinks to files)
+    #[value(alias = "F")]
+    RegularFile,
     #[value(alias = "b")]
     BlockDevice,
     #[value(alias = "c")]

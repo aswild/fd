@@ -15,6 +15,7 @@ pub struct FileTypes {
     pub pipes: bool,
     pub executables_only: bool,
     pub empty_only: bool,
+    pub reg_files_only: bool,
 }
 
 impl FileTypes {
@@ -22,7 +23,11 @@ impl FileTypes {
         if let Some(ref entry_type) = entry.file_type() {
             // When searching for files, include non-broken symlinks to files without
             // needing to use -L or -tl.
-            if self.files && entry_type.is_symlink() && entry.path().is_file() {
+            if self.files
+                && !self.reg_files_only
+                && entry_type.is_symlink()
+                && entry.path().is_file()
+            {
                 return false;
             }
 

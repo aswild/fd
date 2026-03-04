@@ -208,11 +208,13 @@ Do not traverse into matching directories.
 Filter search by type:
 .RS
 .IP "f, file"
-regular files
+regular files (including symlinks to regular files)
 .IP "d, dir, directory"
 directories
 .IP "l, symlink"
 symbolic links
+.IP "F, regular-file"
+regular files (excluding symlinks)
 .IP "b, block-device"
 block devices
 .IP "c, char-device"
