@@ -7,13 +7,13 @@ fn main() {
             .arg("--dirty=+")
             .stderr(std::process::Stdio::inherit())
             .output();
-        if let Ok(out) = git_describe_out {
-            if out.status.success() {
-                // stringify output, strip whitespace, and strip a leading 'v'
-                let git_version = String::from_utf8_lossy(&out.stdout);
-                let git_version_trimmed = git_version.trim().trim_start_matches('v');
-                println!("cargo:rustc-env=FD_GIT_VERSION={git_version_trimmed}");
-            }
+        if let Ok(out) = git_describe_out
+            && out.status.success()
+        {
+            // stringify output, strip whitespace, and strip a leading 'v'
+            let git_version = String::from_utf8_lossy(&out.stdout);
+            let git_version_trimmed = git_version.trim().trim_start_matches('v');
+            println!("cargo:rustc-env=FD_GIT_VERSION={git_version_trimmed}");
         }
         println!("cargo:rerun-if-changed=.git/index");
         println!("cargo:rerun-if-changed=.git/HEAD");
