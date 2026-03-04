@@ -69,16 +69,6 @@ tempfile = "3.24"
 filetime = "0.2"
 test-case = "3.3"
 
-[profile.dev]
-debug = "line-tables-only"
-
-[profile.dev.package."*"]
-debug = false
-
-[profile.debugging]
-inherits = "dev"
-debug = true
-
 [profile.release]
 lto = "thin"
 
