@@ -311,7 +311,7 @@ This is the output of `fd -h`. To see the full set of command-line options, use 
 also includes a much more detailed help text.
 
 ```
-Usage: fd [OPTIONS] [pattern [path...]]
+Usage: fd [OPTIONS] [pattern [path]...]
 
 Arguments:
   [pattern]  the search pattern (a regular expression, unless '--glob' is used; optional)
@@ -344,6 +344,7 @@ Options:
                                    always, never]
       --hyperlink[=<when>]         Add hyperlinks to output paths [default: never] [possible
                                    values: auto, always, never]
+      --ignore-contain <name>      Ignore directories containing the named entry
   -h, --help                       Print help (see more with '--help')
   -V, --version                    Print version
 ```
@@ -679,6 +680,13 @@ You can install [the fd package](https://guix.gnu.org/en/packages/fd-8.1.1/) fro
 guix install fd
 ```
 
+### On Mise
+
+You can use [mise](https://github.com/jdx/mise) to install `fd` with a command like this:
+```
+mise use -g fd@latest
+```
+
 ### On NixOS / via Nix
 
 You can use the [Nix package manager](https://nixos.org/nix/) to install `fd`:
@@ -739,13 +747,34 @@ cargo install --path .
 
 ### Completions
 
-Tab completions for several shells are included in the "autocomplete" directory. To use these completions put the file in an appropriate location for your shell, and depending on
-your shell, you may need to source the file as well:
+#### From Release Archives
 
-- bash: you will need to source the fd.bash file in your ~/.bashrc file. Or put it in a directory of files that are all sourced.
-- zsh: move the "_fd" file to somewhere on your fpath
-- fish: Put fd.fish in ~/.config/fish/completions
-- powershell: Source the fd.ps1 file from one of the files in  the [profile scripts locations](https://learn.microsoft.com/en-us/powershell/scripting/learn/shell/creating-profiles?view=powershell-7.5).
+Pre-built completion files are included in the release archives (`.tar.gz`/`.zip`) on the
+[Releases page](https://github.com/sharkdp/fd/releases), in the `autocomplete` directory.
+To use these completions:
+
+- **bash**: Source the `fd.bash` file in your `~/.bashrc`, or place it in a directory that gets sourced automatically.
+- **zsh**: Move `_fd` to a directory in your `fpath` (e.g., `~/.zfunc`).
+- **fish**: Copy `fd.fish` to `~/.config/fish/completions/`.
+- **powershell**: Source `_fd.ps1` from one of your [profile scripts](https://learn.microsoft.com/en-us/powershell/scripting/learn/shell/creating-profiles?view=powershell-7.5).
+
+#### Generate from fd
+
+You can also generate completions directly using `fd --gen-completions <shell>`:
+
+```bash
+# Bash
+fd --gen-completions bash > ~/.local/share/bash-completion/completions/fd
+
+# Zsh (ensure ~/.zfunc is in your fpath)
+fd --gen-completions zsh > ~/.zfunc/_fd
+
+# Fish
+fd --gen-completions fish > ~/.config/fish/completions/fd.fish
+
+# PowerShell
+fd --gen-completions powershell >> $PROFILE
+```
 
 ## Maintainers
 

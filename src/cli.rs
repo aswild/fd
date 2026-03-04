@@ -4,8 +4,8 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use clap::{
-    error::ErrorKind, value_parser, Arg, ArgAction, ArgGroup, ArgMatches, Command, Parser,
-    ValueEnum,
+    Arg, ArgAction, ArgGroup, ArgMatches, Command, Parser, ValueEnum, error::ErrorKind,
+    value_parser,
 };
 #[cfg(feature = "completions")]
 use clap_complete::Shell;
@@ -540,6 +540,10 @@ pub struct Opts {
     )]
     pub hyperlink: HyperlinkWhen,
 
+    /// Ignore directories containing the named entry.
+    #[arg(long, value_name = "name")]
+    pub ignore_contain: Vec<String>,
+
     /// Set number of threads to use for searching & executing (default: number
     /// of available CPU cores)
     #[arg(long, short = 'j', value_name = "num", hide_short_help = true, value_parser = str::parse::<NonZeroUsize>)]
@@ -606,6 +610,7 @@ pub struct Opts {
     /// relative to this directory.
     #[arg(
         long,
+        short = 'C',
         value_name = "path",
         hide_short_help = true,
         help = "Change current working directory",

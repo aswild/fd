@@ -1835,6 +1835,21 @@ fn test_exec_multi() {
     );
 }
 
+#[cfg(not(windows))]
+#[test]
+fn test_exec_nulls() {
+    let te = TestEnv::new(DEFAULT_DIRS, DEFAULT_FILES);
+    te.assert_output(
+        &["foo", "--print0", "--exec", "printf", "p=%s"],
+        "p=./a.fooNULL
+        p=./one/b.fooNULL
+        p=./one/two/C.Foo2NULL
+        p=./one/two/c.fooNULL
+        p=./one/two/three/d.fooNULL
+        p=./one/two/three/directory_fooNULL",
+    );
+}
+
 #[test]
 fn test_exec_batch() {
     let (te, abs_path) = get_test_env_with_abs_path(DEFAULT_DIRS, DEFAULT_FILES);
@@ -2459,7 +2474,7 @@ fn test_max_results() {
     assert_just_one_result_with_option("--max-results=1");
     assert_just_one_result_with_option("-1");
 
-    // check that --max-results & -1 conflic with --exec
+    // check that --max-results & -1 conflict with --exec
     te.assert_failure(&["thing", "--max-results=0", "--exec=cat"]);
     te.assert_failure(&["thing", "-1", "--exec=cat"]);
     te.assert_failure(&["thing", "--max-results=1", "-1", "--exec=cat"]);
@@ -2691,7 +2706,7 @@ fn test_hyperlink() {
     #[cfg(unix)]
     let hostname = nix::unistd::gethostname().unwrap().into_string().unwrap();
     #[cfg(not(unix))]
-    let hostname = "";
+    let hostname = "/";
 
     let expected = format!(
         "\x1b]8;;file://{}{}/a.foo\x1b\\a.foo\x1b]8;;\x1b\\",
@@ -2700,4 +2715,55 @@ fn test_hyperlink() {
     );
 
     te.assert_output(&["--hyperlink=always", "a.foo"], &expected);
+}
+
+#[test]
+fn test_ignore_contain() {
+    let te = TestEnv::new(
+        &["include", "exclude", "exclude/sub", "other"],
+        &[
+            "top",
+            "include/foo",
+            "exclude/CACHEDIR.TAG",
+            "exclude/sub/nope",
+            "other/ignoremyparent",
+        ],
+    );
+    let expected = "include/
+    include/foo
+    symlink
+    top";
+    te.assert_output(
+        &[
+            "--ignore-contain=CACHEDIR.TAG",
+            "--ignore-contain=ignoremyparent",
+            ".",
+        ],
+        expected,
+    );
+}
+
+#[test]
+fn test_ignore_contain_precedence_over_depth_check() {
+    let te = TestEnv::new(
+        &["include", "exclude", "exclude/sub"],
+        &[
+            "top",
+            "include/foo",
+            "exclude/CACHEDIR.TAG",
+            "exclude/sub/nope",
+        ],
+    );
+    let expected = "include/foo";
+    te.assert_output(
+        &["--ignore-contain=CACHEDIR.TAG", "--min-depth=2", "."],
+        expected,
+    );
+}
+
+#[test]
+fn test_ignore_contain_precedence_over_root_check() {
+    let te = TestEnv::new(&["include"], &["CACHEDIR.TAG", "top", "include/foo"]);
+    let expected = "";
+    te.assert_output(&["--ignore-contain=CACHEDIR.TAG", "."], expected);
 }

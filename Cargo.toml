@@ -16,9 +16,9 @@ license = "MIT OR Apache-2.0"
 name = "fd-find"
 readme = "README.md"
 repository = "https://github.com/sharkdp/fd"
-version = "10.3.0"
-edition= "2021"
-rust-version = "1.74.0"
+version = "10.4.0"
+edition= "2024"
+rust-version = "1.90.0"
 
 [badges.appveyor]
 repository = "sharkdp/fd"
@@ -34,40 +34,50 @@ path = "src/main.rs"
 aho-corasick = "1.1"
 nu-ansi-term = "0.50"
 argmax = "0.4.0"
-ignore = "0.4.23"
-regex = "1.11.2"
+ignore = "0.4.25"
+regex = "1.12.2"
 regex-syntax = "0.8"
-ctrlc = "3.4"
+ctrlc = "3.5"
 globset = "0.4"
 anyhow = "1.0"
 dirs = "6.0.0"
 normpath = "1.1.1"
 crossbeam-channel = "0.5.15"
-clap_complete = {version = "4.5.57", optional = true}
+clap_complete = {version = "4.5.62", optional = true}
 faccess = "0.2.4"
-jiff = "0.2.14"
+jiff = "0.2.18"
 tikv-jemallocator = { version = "0.6.0", optional = true }
 
 [dependencies.clap]
-version = "4.5.46"
+version = "4.5.54"
 features = ["suggestions", "color", "wrap_help", "cargo", "derive"]
 
 [dependencies.lscolors]
-version = "0.20"
+version = "0.21"
 default-features = false
 features = ["nu-ansi-term"]
 
 [target.'cfg(unix)'.dependencies]
-nix = { version = "0.30.1", default-features = false, features = ["signal", "user", "hostname"] }
+nix = { version = "0.31.1", default-features = false, features = ["signal", "user", "hostname"] }
 
 [target.'cfg(all(unix, not(target_os = "redox")))'.dependencies]
 libc = "0.2"
 
 [dev-dependencies]
 diff = "0.1"
-tempfile = "3.21"
+tempfile = "3.24"
 filetime = "0.2"
 test-case = "3.3"
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.debugging]
+inherits = "dev"
+debug = true
 
 [profile.release]
 lto = "thin"
@@ -97,3 +107,20 @@ user-friendly alternative to find. While it does not aim to support all of
 find's powerful functionality, it provides sensible (opinionated) defaults for
 a majority of use cases.
 """
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-v{ version }-{ target }.{ archive-format }"
+bin-dir = "{ bin }-v{ version }-{ target }/{ bin }{ binary-ext }"
+pkg-fmt = "tgz"
+
+[package.metadata.binstall.overrides.x86_64-pc-windows-msvc]
+pkg-fmt = "zip"
+
+[package.metadata.binstall.overrides.x86_64-pc-windows-gnu]
+pkg-fmt = "zip"
+
+[package.metadata.binstall.overrides.i686-pc-windows-msvc]
+pkg-fmt = "zip"
+
+[package.metadata.binstall.overrides.aarch64-pc-windows-msvc]
+pkg-fmt = "zip"
